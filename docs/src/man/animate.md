@@ -1,0 +1,6 @@
+
+# Animation
+
+```@docs
+animate
+```

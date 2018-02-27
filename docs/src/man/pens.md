@@ -1,5 +1,7 @@
 
-# Pens
+# Pens and Arrows
+
+## Pens
 
 Colors are stored in a `NamedColor`.
 
@@ -19,6 +21,8 @@ The function `NoPen()` returns a pen which specifies no drawing. This may be use
 
 # Arrows
 
-```@doc
+Each `Path2D` or `Path3D` object has an `arrow` field for specifying how an arrow should be drawn on the path. A default arrow in 2D/3D can be created using `Arrow()`/`Arrow3()`. 
+
+```@docs
 Arrow
 ```

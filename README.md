@@ -1,6 +1,8 @@
 
 # AsyPlots.jl
 
+[Documentation](https://sswatson.github.io/AsyPlots.jl/stable)
+
 ## Introduction
 
 *AsyPlots* is a Julia package for creating figures in [Asymptote](http://asymptote.sourceforge.net). Asymptote is

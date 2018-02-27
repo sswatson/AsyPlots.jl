@@ -103,9 +103,9 @@ isdefault(P::Pen) = (P == Pen())
 isdefault(S::AbstractString) = (S == "")
 
 """
-    Arrow(name::AbstractString="Arrow",
-          size::Real=7.5,
-          position::Real=1)
+    Arrow(name::AbstractString,
+          size::Real,
+          position::Real)
 
 Store instructions for drawing an arrow
 
@@ -113,7 +113,7 @@ Store instructions for drawing an arrow
 how far along the path the arrow should be drawn
 
 NoArrow() returns a no-arrow instruction, while
-Arrow3() gives an arrow suitable for 3D paths 
+Arrow3() gives an arrow suitable for 3D paths
 """
 struct Arrow
     name::AbstractString

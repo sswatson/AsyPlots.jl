@@ -7,6 +7,7 @@ makedocs(
     sitename = "AsyPlots.jl",
     doctest = false,
     strict = false,
+    checkdocs = :none,
     pages = Any[
         "Home" => "index.md",
         "Manual" => [
@@ -14,10 +15,11 @@ makedocs(
             "man/asy2d.md",
             "man/asy3d.md",
             "man/pens.md",
-            "man/defaults.md",
+            "man/graphing.md",
+            "man/output.md",
             "man/settings.md",
-            "man/animate.md",
-            "man/graphing.md"
+            "man/defaults.md",
+            "man/animate.md"
             ],
         "Examples" => [
             "examples/examples2d.md",
@@ -26,4 +28,10 @@ makedocs(
     ]
 )
 
-deploydocs(repo="github.com/sswatson/AsyPlots.jl.git")
+deploydocs(
+    repo="github.com/sswatson/AsyPlots.jl.git",
+    target="build",
+    julia="0.6",
+    deps=nothing,
+    make=nothing
+)

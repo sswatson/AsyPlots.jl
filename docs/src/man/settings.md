@@ -1,13 +1,6 @@
 
-# Settings and output
 
-## Output
-
-```@docs
-save
-```
-
-## Settings
+# Settings
 
 ```@docs
 asy

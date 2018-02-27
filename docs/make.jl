@@ -25,3 +25,5 @@ makedocs(
         ]
     ]
 )
+
+deploydocs(repo="github.com/sswatson/AsyPlots.jl.git")

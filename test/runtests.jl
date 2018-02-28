@@ -1,8 +1,6 @@
 using AsyPlots
 using Base.Test
 
-# write your own tests here
-
 # 2D
 Pen()
 Arrow()
@@ -24,13 +22,3 @@ S = Surface(z)
 P = Point(1,2,color="DarkGreen")
 Q = Path([0 0; 0 1; 1 1; 0 2],spline=true,label="Label(\"A\",Relative(0.8))")
 C = Circle((0,0),1.0,linewidth=3,opacity=0.2,color="Purple")
-Plot(P,Q,C,axes=true,axispen=Pen(color="DarkGreen"),width=150)
-
-plot(x->x^2,0,1)
-
-# 3D 
-plot(rand(4,4);meshpen=Pen(color="MidnightBlue"),
-               spline=false) 
-
-# Transformations
-Shift(1,2)*Circle((0,2),1)

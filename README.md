@@ -1,4 +1,6 @@
 
+![fgf](images/header.svg)
+
 # AsyPlots.jl
 
 [Documentation](https://sswatson.github.io/AsyPlots.jl/stable)

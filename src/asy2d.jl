@@ -173,6 +173,7 @@ function AsyString(path::Path2D)
         AsyString("""
         file pathdata = input("path{IDENTIFIER}.csv");
         real[][] A = pathdata.csv().dimension(0,2);
+        close(pathdata); 
         guide $pathname;
         for(int i=0; i<A.length; ++i){
             $pathname = $pathname $spline (A[i][0],A[i][1]);
@@ -388,6 +389,7 @@ function AsyString(P::Polygon2D)
         AsyString("""
         file pathdata = input("path{IDENTIFIER}.csv");
         real[][] A = pathdata.csv().dimension(0,2);
+        close(pathdata); 
         guide $pathname;
         for(int i=0; i<A.length; ++i){
             $pathname = $pathname $spline (A[i][0],A[i][1]);
@@ -462,7 +464,7 @@ Label2D(s,x::Real,y::Real;kwargs...) =
                 Label2D(s,Vec2(x,y);kwargs...)
 Label(s::AbstractString,x::Real,y::Real;kwargs...) = Label2D(s,x,y;kwargs...)
 Label2D(s::AbstractString,z::Union{Real,Complex};kwargs...) =
-                                            Label2D(reim(z)...;kwargs...)
+                                            Label2D(s,reim(z)...;kwargs...)
 Label(s::AbstractString,z::Union{Real,Complex};kwargs...) = Label2D(s,z;kwargs...)
 
 function Base.show(io::IO,L::Label2D)
@@ -490,6 +492,8 @@ struct Plot2D <: Plot
     elements::Array{<:GraphicElement2D,1}
     options::Array{Any,1}
 end
+
+Plot2D(;kwargs...) = Plot2D(GraphicElement2D[],kwargs...) 
 
 Plot2D(elements::Array{<:GraphicElement2D,1};kwargs...) =
         Plot2D(elements::Array{<:GraphicElement2D,1},kwargs)
@@ -615,39 +619,8 @@ function +(P::Plot2D,Q::Plot2D)
     return Plot2D(elements,collect(options))
 end
 
-_SHOW_PLOTS = true
-function showplots(b::Bool)
-    global _SHOW_PLOTS
-    _SHOW_PLOTS = b
-    """Plot display turned $(b ? "on" : "off")"""
-end
+blue, red, green = [Colors.parse(Colors.Colorant,c) for c in ("MidnightBlue","DarkRed","SeaGreen")]
 
-function Base.show(io::IO,::MIME"text/plain",P::Plot2D)
-    global _SHOW_PLOTS
-    if _SHOW_PLOTS
-        tempdir = mktempdir()
-        filename = "$tempdir/myplot.pdf"
-        save(filename,P)
-        try
-            if is_apple()
-                run(`open $filename`)
-            elseif is_linux() || is_bsd()
-                run(`xdg-open $filename`)
-            elseif is_windows()
-                run(`start $filename`)
-            end
-        catch e
-            error(string(
-            "Failed to show the generated pdf.",
-            "Run `showplots(false)` to stop trying to show pdfs.\n",
-            "Error: "), sprint(Base.showerror, e))
-        end
-    else
-        n = length(P.elements)
-        s = n == 1 ? "" : "s"
-        print(io,"$(split(typeof(P),".")[end])(<$n elements>)")
-    end
-end
 """
     plot(x,y;kwargs...)
     plot(y;kwargs...)
@@ -678,6 +651,9 @@ function plot(x,y;kwargs...)
     global _DEFAULT_PATH2D_KWARGS
     pathkwargs, plotkwargs = splitkwargs(process_pen_kwargs(kwargs),
                                          _DEFAULT_PATH2D_KWARGS)
+    if ~(:pen in keys(Dict(pathkwargs)))
+        push!(pathkwargs,:pen=>Pen(color=blue,linewidth=1.5))
+    end
     Plot2D([Path2D(x,y;pathkwargs...)];
                    ignoreaspect=true,
                    axes=true,
@@ -698,11 +674,36 @@ function plot(f::Function,
     plot(x,f.(x);kwargs...)
 end
 
-function plot(f::Function,t::Tuple{<:Real,<:Real};kwargs...)
+function plot(f,t::Tuple{<:Real,<:Real};kwargs...)
     plot(f,t...;kwargs...)
 end
 
+function plot(L::Vector,a::Real,b::Real;
+              colors=Colors.distinguishable_colors(length(L),
+                        [blue,red,green],
+                        lchoices=linspace(50,100,15),
+                        cchoices=linspace(50,100,15),
+                        hchoices=linspace(170,340,15)),kwargs...)
+    if colors == nothing
+        sum(plot(f,a,b;kwargs...) for f in L)
+    else
+        sum(plot(f,a,b;pen=Pen(color=c,linewidth=1.5),kwargs...) for (f,c) in zip(L,colors))
+    end
+end
+
 Requires.@require SymPy begin
+    function plot(S::SymPy.Sym,t::Tuple{S,T,U} where U<:Real where T<:Real where S;kwargs...)
+        plot(SymPy.lambdify(S,t[1:1]),t[2],t[3];kwargs...)
+    end
+
+    function plot(L::Vector,t::Tuple{S,T,U} where U<:Real where T<:Real where S;kwargs...)
+        plot([SymPy.lambdify(e,t[1:1]) for e in L],t[2],t[3];kwargs...) 
+    end
+
+    function plot(L::Vector,x::SymPy.Sym,a::Real,b::Real)
+        plot(L,(x,a,b))
+    end    
+    
     function plot(S::SymPy.Sym,args...;kwargs...)
         plot(SymPy.lambdify(S),args...;kwargs...)
     end

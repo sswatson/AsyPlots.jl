@@ -33,7 +33,8 @@ export Point, Point2D, Point3D,
        save,
        junosvg, junopng,
        fitwidth, fitheight,
-       animate
+       animate,
+       piechart
 
 abstract type Plot end
 abstract type GraphicElement end
@@ -45,7 +46,13 @@ struct AsyString
 end
 
 _BACKEND = "asy"
-const _DEFAULT_WIDTH = 350
+_DEFAULT_WIDTH = 512
+
+function defaultwidth(n::Integer)
+    global _DEFAULT_WIDTH
+    _DEFAULT_WIDTH = n
+    "Default image width set to $n"
+end
 
 """
     asy()
@@ -89,5 +96,6 @@ include("output.jl")
 include("transformations.jl")
 include("tools.jl")
 include("animate.jl")
+include("stats.jl") 
 
 end # module

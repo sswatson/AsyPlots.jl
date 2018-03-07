@@ -116,6 +116,7 @@ function AsyString(P::Path3D)
         AsyString("""
         file pathdata = input("path{IDENTIFIER}.csv");
         real[][] A = pathdata.csv().dimension(0,3);
+        close(pathdata); 
         guide3 $pathname;
         for(int i=0; i<A.length; ++i){
             $pathname = $pathname $spline (A[i][0],A[i][1],A[i][2]);
@@ -233,6 +234,7 @@ function AsyString(S::Surface)
         clipfile = """
         file cond = input("cond{IDENTIFIER}.csv");
         int[][] cond = cond.csv().dimension(m,n);
+        close(cond); 
         """
         clipfunction = """
         bool cond(pair t) {
@@ -256,12 +258,15 @@ function AsyString(S::Surface)
 
     file xdata = input("x{IDENTIFIER}.csv");
     real[][] x = xdata.csv().dimension(m,n);
+    close(xdata); 
 
     file ydata = input("y{IDENTIFIER}.csv");
     real[][] y = ydata.csv().dimension(m,n);
+    close(ydata); 
 
     file zdata = input("z{IDENTIFIER}.csv");
     real[][] z = zdata.csv().dimension(m,n);
+    close(zdata); 
 
     $clipfile
 
@@ -350,6 +355,7 @@ function AsyString(P::Polygon3D)
         AsyString("""
         file pathdata = input("path{IDENTIFIER}.csv");
         real[][] A = pathdata.csv().dimension(0,3);
+        close(pathdata); 
         guide3 $pathname;
         for(int i=0; i<A.length; ++i){
             $pathname = $pathname $spline (A[i][0],A[i][1],A[i][2]);
@@ -432,6 +438,8 @@ struct Plot3D <: Plot
     elements::Array{<:GraphicElement3D,1}
     options::Array{Any,1}
 end
+
+Plot3D() = Plot3D(GraphicElement3D[],[])
 
 function Plot3D(elements::Array{<:GraphicElement3D};kwargs...)
     Plot3D(elements,kwargs)
@@ -518,7 +526,7 @@ function AsyString(P::Plot3D)
         axesstring = ""
     end
 
-    currentprojection = "$(D[:projection])(2*M.x,1.25*M.y,1.5*M.z);"
+    currentprojection = "$(D[:projection])(M.x+(M.x-m.x),M.y+0.25*(M.y-m.y),M.z+0.5*(M.z-m.z));"
     if D[:camera] != nothing
         a,b,c = D[:camera]
         currentprojection = "$(D[:projection])($a,$b,$c);"
@@ -558,6 +566,7 @@ function AsyString(P::Plot3D)
     $axesstring
 
     triple M = currentpicture.userMax();
+    triple m = currentpicture.userMin();
     currentprojection = $currentprojection
     $shipout
     """,

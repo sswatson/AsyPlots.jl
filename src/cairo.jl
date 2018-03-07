@@ -154,8 +154,9 @@ end
 function addtocontext!(cr::Cairo.CairoContext,
                        p::Point2D,
                        bb::BoundingBox)
+    m = min(bb.xmax-bb.xmin,bb.ymax-bb.ymin)
     lw = p.pen.linewidth == 0 ? 3 : p.pen.linewidth
-    Cairo.arc(cr,p.P.x,p.P.y,0.0014*lw,0,2π)
+    Cairo.arc(cr,p.P.x,p.P.y,0.003*m*lw,0,2π)
     Cairo.set_source_rgb(cr,p.pen.color...)
     Cairo.fill(cr)
 end
@@ -177,7 +178,7 @@ end
 
 function bytes(P::Plot2D;format=:png,bbox=false,border=3)
     global _DEFAULT_PLOT2D_KWARGS
-    D = Dict(P.options)
+    D = Dict{Symbol,Any}(P.options)
     if :axes in keys(D) && D[:axes]
         P = Plot2D([axes(P);P.elements],P.options)
     end
@@ -185,12 +186,13 @@ function bytes(P::Plot2D;format=:png,bbox=false,border=3)
         D[:bgcolor] = NamedColor(D[:bgcolor])
     end
     width = :width in keys(D) ? D[:width] : _DEFAULT_WIDTH
-    border_fraction = border/width
+    border_fraction = 3*border/width
     bb = boundingbox(P,border=border_fraction)
     if ~(bbox == false)
         bb = boundingbox([bb,bbox])
     end
     asp_ratio = aspectratio(bb)
+    # height should be even, for ffmpeg:
     height = 2*round(Int,(2*asp_ratio)\width)
     bufferdata = UInt8[]
     iobuffer = IOBuffer(bufferdata,true,true)

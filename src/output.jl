@@ -73,10 +73,11 @@ function save(filename::AbstractString,
                 mv(pdffile,filename,remove_destination=true)
             elseif endswith(filename,".png")
                 global _DEFAULT_WIDTH
-                D = Dict(P.options)
+                D = Dict{Symbol,Any}(P.options)
                 width = :width in keys(D) ? D[:width] : _DEFAULT_WIDTH
                 base = sans_extension(filename)
-                run(`pdftoppm -png -r $width -singlefile $pdffile $base`)
+                run(`pdftoppm -png -scale-to-x $width -scale-to-y
+                                        -1 -singlefile $pdffile $base`)
             elseif endswith(filename,".svg")
                 run(`pdf2svg $tempdir/myplot.pdf $filename`)
             end
@@ -85,7 +86,7 @@ function save(filename::AbstractString,
         if isa(P,Plot3D)
             error("3D output not supported with Cairo backend")
         end
-        D = Dict(P.options)
+        D = Dict{Symbol,Any}(P.options)
         border = (:border in keys(D) ? D[:border]
                         : _DEFAULT_PLOT2D_KWARGS[:border])
         bufferdata = bytes(P;format=Symbol(extension(filename)),
@@ -97,10 +98,21 @@ end
 
 save(S::GraphicElement;kwargs...) = save(Plot([S],kwargs))
 
-Base.mimewritable(::MIME"image/svg+xml",P::Plot2D) = true
-Base.mimewritable(::MIME"image/png", P::Plot2D) = true
+_SHOW_PLOTS = true
+function showplots(b::Bool)
+    global _SHOW_PLOTS
+    _SHOW_PLOTS = b
+    """Plot display turned $(b ? "on" : "off")"""
+end
+
+Base.mimewritable(::MIME"image/svg+xml",P::Plot2D) = false
+Base.mimewritable(::MIME"image/svg+xml",P::Plot3D) = false
+Base.mimewritable(::MIME"image/png",P::Plot2D) = true
 
 function Base.show(io::IO, ::MIME"image/svg+xml", P::Plot2D)
+    if length(P.elements) == 0
+        return nothing
+    end
     global _BACKEND
     if _BACKEND == "asy"
         directory = mktempdir()
@@ -108,7 +120,7 @@ function Base.show(io::IO, ::MIME"image/svg+xml", P::Plot2D)
         save(filename, P)
         write(io, read("$directory/myplot.svg"))
     else
-        D = Dict(P.options)
+        D = Dict{Symbol,Any}(P.options)
         border = (:border in keys(D) ? D[:border]
                         : _DEFAULT_PLOT2D_KWARGS[:border])
         write(io,bytes(P;format=:svg,border=border))
@@ -116,6 +128,9 @@ function Base.show(io::IO, ::MIME"image/svg+xml", P::Plot2D)
 end
 
 function Base.show(io::IO, ::MIME"image/png", P::Plot2D)
+    if length(P.elements) == 0
+        return nothing
+    end
     global _BACKEND
     if _BACKEND == "asy"
         directory = mktempdir()
@@ -123,14 +138,18 @@ function Base.show(io::IO, ::MIME"image/png", P::Plot2D)
         save(filename, P)
         write(io, read("$directory/myplot.png"))
     elseif _BACKEND == "cairo"
-        D = Dict(P.options)
+        D = Dict{Symbol,Any}(P.options)
         border = (:border in keys(D) ? D[:border]
                         : _DEFAULT_PLOT2D_KWARGS[:border])
         write(io,bytes(P;format=:png,border=border))
     end
 end
 
+
 function Base.show(io::IO, ::MIME"image/svg+xml", P::Plot3D)
+    if length(P.elements) == 0
+        return
+    end
     global _HAVE_ASY
     if ~_HAVE_ASY
         l = length(P.elements)
@@ -143,7 +162,11 @@ function Base.show(io::IO, ::MIME"image/svg+xml", P::Plot3D)
     write(io, read("$tempdir/myplot.svg"))
 end
 
+
 function Base.show(io::IO, ::MIME"image/png", P::Plot3D)
+    if length(P.elements) == 0
+        return nothing
+    end
     global _HAVE_ASY
     if ~_HAVE_ASY
         l = length(P.elements)
@@ -160,6 +183,9 @@ _is_ijulia() = isdefined(Main, :IJulia) && Main.IJulia.inited
 _is_juno()   = isdefined(Main, :Juno) && Main.Juno.isactive()
 
 function Base.show(io::IO,::MIME"text/plain",P::Plot)
+    if length(P.elements) == 0
+        return nothing
+    end
     global _SHOW_PLOTS
     if _SHOW_PLOTS && !_is_ijulia() && !_is_juno() && isdefined(Base, :active_repl)
         tempdir = mktempdir()
@@ -182,7 +208,7 @@ function Base.show(io::IO,::MIME"text/plain",P::Plot)
     else
         n = length(P.elements)
         s = n == 1 ? "" : "s"
-        print(io,"$(split(typeof(P),".")[end])(<$n elements>)")
+        print(io,"$(split(string(typeof(P)),".")[end])(<$n elements>)")
     end
 end
 
@@ -248,7 +274,7 @@ Requires.@require Juno begin
         if _BACKEND == "asy"
             filename = "$tempdir/myplot.$_JUNO_ASY_FORMAT"
             save(filename,P)
-            D = Dict(P.options)
+            D = Dict{Symbol,Any}(P.options)
             Juno.render(pane,Hiccup.div(
                     style="text-align:center",
                     Hiccup.img(src="$tempdir/myplot.$_JUNO_ASY_FORMAT";
@@ -282,4 +308,15 @@ Requires.@require Contour begin
         return Path2D(hcat(Float64[cv[k][1] for k=1:length(cv)],
                            Float64[cv[k][2] for k=1:length(cv)]);kwargs...)
     end
+    Path(curve::Contour.Curve2{Float64};kwargs...) =
+        Path2D(curve;kwargs...)
+
+    function Polygon2D(curve::Contour.Curve2{Float64};kwargs...)
+        cv = curve.vertices
+        return Polygon2D(hcat(Float64[cv[k][1] for k=1:length(cv)],
+                              Float64[cv[k][2] for k=1:length(cv)]);kwargs...)
+    end
+    Polygon(curve::Contour.Curve2{Float64};kwargs...) =
+        Polygon2D(curve;kwargs...)
+
 end

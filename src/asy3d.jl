@@ -232,9 +232,9 @@ function AsyString(S::Surface)
             error("clip misspecified")
         end
         clipfile = """
-        file cond = input("cond{IDENTIFIER}.csv");
-        int[][] cond = cond.csv().dimension(m,n);
-        close(cond); 
+        file condfile = input("cond{IDENTIFIER}.csv");
+        int[][] cond = condfile.csv().dimension(m,n);
+        close(condfile); 
         """
         clipfunction = """
         bool cond(pair t) {

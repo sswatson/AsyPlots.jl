@@ -1,0 +1,7 @@
+
+X = collect(1:10)
+Y = randn(10)
+plot(Y)
+plot(X,Y)
+plot([X,Y])
+plot([x->x^n for n=1:4],0,1)

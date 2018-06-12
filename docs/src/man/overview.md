@@ -13,7 +13,10 @@ L = [Path([-1 -1; 1 2]),
      Label("A",(1,1)),
      Polygon([2+im,3+im,1+2im])]
 Plot(L)
+save("polygon.svg",ans) # hide
 ```
+
+![](polygon.svg)
 
 ## Drawing options
 
@@ -27,7 +30,10 @@ L = [Path([-1 -1; 1 2],pen=Pen(color="Purple",linewidth=3),arrow=Arrow(12)),
      Label("A",(1,1),pen=Pen(fontsize=14)),
      Polygon([2+im,3+im,1+2im],pen=NoPen(),fillpen=Pen(color="MidnightBlue"))]
 Plot(L)
+save("example2.svg",ans) # hide
 ```
+
+![](example2.svg)
 
 Keyword arguments to `Pen` may be given directly to the underlying primitive, in which case they are automatically wrapped into a `Pen` object:
 
@@ -40,7 +46,10 @@ Options applicable to the whole figure can be specified as keyword arguments to 
 
 ```@example 2
 Plot(L,axes=true,axisarrow=Arrow(),bgcolor="gray",width=250)
+save("example3.svg",ans) # hide
 ```
+
+![](example3.svg)
 
 ## plot
 
@@ -63,7 +72,10 @@ using LaTeXStrings
 srand(1) # hide
 z = randn(5,5)
 plot(z,xmax=4.5,ymax=4.5,xlabel=L"$x$",ylabel=L"$y$",width=250)
+save("surfplot.svg",ans) # hide
 ```
+
+![](surfplot.svg)
 
 `interactive(P::Plot3D)` opens a window for 3D graphic manipulation
 

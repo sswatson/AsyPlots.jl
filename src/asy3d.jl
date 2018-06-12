@@ -116,7 +116,7 @@ function AsyString(P::Path3D)
         AsyString("""
         file pathdata = input("path{IDENTIFIER}.csv");
         real[][] A = pathdata.csv().dimension(0,3);
-        close(pathdata); 
+        close(pathdata);
         guide3 $pathname;
         for(int i=0; i<A.length; ++i){
             $pathname = $pathname $spline (A[i][0],A[i][1],A[i][2]);
@@ -232,9 +232,9 @@ function AsyString(S::Surface)
             error("clip misspecified")
         end
         clipfile = """
-        file cond = input("cond{IDENTIFIER}.csv");
-        int[][] cond = cond.csv().dimension(m,n);
-        close(cond); 
+        file condfile = input("cond{IDENTIFIER}.csv");
+        int[][] cond = condfile.csv().dimension(m,n);
+        close(condfile);
         """
         clipfunction = """
         bool cond(pair t) {
@@ -258,15 +258,15 @@ function AsyString(S::Surface)
 
     file xdata = input("x{IDENTIFIER}.csv");
     real[][] x = xdata.csv().dimension(m,n);
-    close(xdata); 
+    close(xdata);
 
     file ydata = input("y{IDENTIFIER}.csv");
     real[][] y = ydata.csv().dimension(m,n);
-    close(ydata); 
+    close(ydata);
 
     file zdata = input("z{IDENTIFIER}.csv");
     real[][] z = zdata.csv().dimension(m,n);
-    close(zdata); 
+    close(zdata);
 
     $clipfile
 
@@ -355,7 +355,7 @@ function AsyString(P::Polygon3D)
         AsyString("""
         file pathdata = input("path{IDENTIFIER}.csv");
         real[][] A = pathdata.csv().dimension(0,3);
-        close(pathdata); 
+        close(pathdata);
         guide3 $pathname;
         for(int i=0; i<A.length; ++i){
             $pathname = $pathname $spline (A[i][0],A[i][1],A[i][2]);
@@ -435,17 +435,17 @@ julia> Plot(Path([0 0 0; 1 1 1]),Path([0 0 0; 0 0 1]))
 ```
 """
 struct Plot3D <: Plot
-    elements::Array{<:GraphicElement3D,1}
+    elements::Array{<:GraphicElement,1}
     options::Array{Any,1}
 end
 
-Plot3D() = Plot3D(GraphicElement3D[],[])
+Plot3D() = Plot3D(GraphicElement[],[])
 
-function Plot3D(elements::Array{<:GraphicElement3D};kwargs...)
+function Plot3D(elements::Array{<:GraphicElement};kwargs...)
     Plot3D(elements,kwargs)
 end
 
-Plot3D(element::GraphicElement3D;kwargs...) = Plot3D([element];kwargs...)
+Plot3D(element::GraphicElement;kwargs...) = Plot3D([element];kwargs...)
 
 function Plot(elements...;kwargs...)
     if length(elements) == 0

@@ -11,8 +11,7 @@
 a mature language for technical drawing in two and three dimensions.
 This package provides access to
 
-- 2D vector graphics and high-quality, ray-traced 3D graphics
-- LaTeX-rendered labels in 2D and 3D
+- Vector graphics with LaTeX-rendered labels in 2D and 3D
 - An OpenGL renderer for interacting with 3D figures
 - Easily customizable colors and arrows
 - Convenience functions for line graphs and surface plots, with less of a time-to-first-plot penalty than some other packages
@@ -39,7 +38,6 @@ A = [(x,y) == (0,0) ? 0 : 1/(x^2+y^2) for x=0:n-1,y=0:n-1]
 B = randn(n,n)
 save("fgf.png",plot(real(fft(A.*B));width=150)) # hide
 plot(real(fft(A.*B)))
-nothing # hide
 ```
 ![fgf](images/fgf.png)
 
@@ -56,6 +54,5 @@ Plot(Path(x,y;color="White"),
      axispen="Red",
      axes=true,
      axisarrow=Arrow())
-nothing # hide
 ```
 ![fgf](images/rw.svg)

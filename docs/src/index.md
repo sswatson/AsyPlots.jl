@@ -33,7 +33,7 @@ using AsyPlots
 n = 250; srand(1)
 A = [(x,y) == (0,0) ? 0 : 1/(x^2+y^2) for x=0:n-1,y=0:n-1]
 B = randn(n,n)
-save("fgf.png",plot(real(fft(A.*B));width=150)) # hide
+save("fgf.png",plot(real(fft(A.*B));width=400)) # hide
 plot(real(fft(A.*B)))
 nothing # hide
 ```

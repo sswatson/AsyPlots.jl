@@ -29,5 +29,30 @@ Scale(x) = Scale(x,x)
         Polygon([S*v for v in P.points];otherargs(P)[2:end]...)
 *(S::Transform,C::Circle2D) =
         Circle(S*C.center,C.radius;otherargs(C)[3:end]...)
+*(S::Transform,L::Label2D) =
+        Label(L.s,S*L.location;otherargs(L)[3:end]...)
 
 *(S::Transform,P::Plot2D) = Plot2D([S*e for e in P.elements],P.options)
+
+function fitsquare(P::Plot2D,ignoreaspect)
+    bbox = AsyPlots.boundingbox(P)
+    w,h = bbox.xmax-bbox.xmin, bbox.ymax-bbox.ymin
+    S = ignoreaspect ? Scale(1/w,1/h) : Scale(1/w)
+    S*(Shift(-bbox.xmin,-bbox.ymin)*P)
+end
+
+fitsquare(P::Plot2D;ignoreaspect=false) = fitsquare(P,ignoreaspect)
+
+function layout(V::Vector{Plot2D};cols=isqrt(length(V)),
+                                  ignoreaspect=false,
+                                  margin=0.05,
+                                  hmargin=margin,
+                                  vmargin=margin)
+    U = fitsquare.(V,false)
+    push!(U[end].options,(:width,
+            floor(Integer,(1+hmargin)*cols*mean(
+                       merge(_DEFAULT_PLOT2D_KWARGS,
+                             Dict(P.options))[:width] for P in U))))
+    sum([Shift(mod(i-1,cols)*(1+hmargin),
+                    -(i-1)÷cols*(1+vmargin))*P for (i,P) in enumerate(U)])
+end

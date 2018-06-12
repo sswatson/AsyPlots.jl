@@ -13,11 +13,13 @@ yv = [r*sin(θ) for r=rvals,θ=thetavals]
 zv = [f(r*cos(θ),r*sin(θ)) for r=rvals,θ=thetavals]
 
 Plot(Surface(xv,yv,zv,meshpen=Pen(color=0.1*NamedColor(1,1,1),linewidth=0.3),
-                   surfacepen=Pen(opacity=0.8)),
+                      surfacepen=Pen(opacity=0.8)),
      camera=(4,2,5),
      xmax=2.2,
      ymax=2.2)
+save("hat.svg",ans) # hide
 ```
+![](hat.svg)
 
 ```@example
 using AsyPlots # hide

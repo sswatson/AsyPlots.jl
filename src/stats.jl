@@ -1,6 +1,44 @@
 
 
 """
+    histogram(data::Vector;
+              bincount=30,
+              bins=linspace(minimum(data),maximum(data),bincount),
+              xlabel="",
+              ylabel="",
+              title="",
+              pen=Pen(color=NamedColor("MidnightBlue"),opacity=0.3))
+
+Make a histogram of `data`
+"""
+function histogram(data::Vector;
+                   bincount=30,
+                   bins=linspace(minimum(data),maximum(data),bincount),
+                   xlabel="",
+                   ylabel="",
+                   title="",
+                   pen=Pen(color=NamedColor("MidnightBlue"),opacity=0.3))
+    w = length(bins)-1
+    tallies = zeros(Int64,w)
+    for x in data
+        tallies[min(w,floor(Integer,(x - bins[1])÷step(bins))+1)] += 1
+    end
+    axes = RawString("""
+           xaxis($(enclosequote(xlabel)),BottomTop,LeftTicks);
+           yaxis($(enclosequote(ylabel)),LeftRight,RightTicks);
+           """)
+    titlelist = GraphicElement[]
+    if title ≠ ""
+        push!(titlelist,
+            Label(title,(mean([bins[1],bins[end]]),1.05*maximum(tallies)),fontsize=16))
+    end
+    Plot([[box(bins[i],0,bins[i+1],tallies[i];
+              fillpen=pen) for i=1:w];
+              [axes];titlelist];
+              ignoreaspect=true)
+end
+
+"""
     piechart(labels,frequencies; title="")
 
 - `labels`: a vector of strings
@@ -15,7 +53,7 @@ function piechart(labels,frequencies; title="")
     end
     angles = [[0];cumsum(2π*frequencies/sum(frequencies))]
     fontsizes = [min(12,round(Integer,50*(angles[i+1]-angles[i]))) for i=1:length(angles)-1]
-    srand(1) 
+    srand(1)
     sectors = [sector(1,angles[i],angles[i+1];
                       fillpen=Pen(color=ColorTypes.RGB(rand(),rand(),rand()),opacity=0.4))
                for i=1:length(angles)-1]

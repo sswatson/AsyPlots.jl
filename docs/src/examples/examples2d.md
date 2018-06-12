@@ -6,7 +6,10 @@ Eigenvalues of a `1000 × 1000` random matrix
 ```@example
 using AsyPlots # hide
 Plot(map(Point,eigvals(randn(1000,1000))))
+save("eigs.svg",ans) # hide
 ```
+
+![](eigs.svg)
 
 ```@example
 using AsyPlots # hide
@@ -19,8 +22,10 @@ for i=1:100
                 pen=NoPen()))
   end
 end
-cairo()
+cairo() 
 P = Plot(L;border=0)
 asy() # hide
-P
+save("perc.svg",P) # hide
 ```
+
+![](perc.svg)

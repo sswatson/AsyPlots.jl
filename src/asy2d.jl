@@ -4,17 +4,24 @@ abstract type GraphicElement2D <: GraphicElement end
 #--- 2D POINTS -----------------------------------------
 #-------------------------------------------------------
 
-struct Vec2
-    x::Real
-    y::Real
+struct Vec2{T<:Real}
+    x::T
+    y::T
 end
 
+Vec2(x::Real,y::Real) = Vec2(promote(x,y)...)
 Vec2(t::Tuple{<:Real,<:Real}) = Vec2(t...)
 Vec2(z::Complex) = Vec2(reim(z)...)
 complex(V::Vec2) = V.x + im*V.y
 abs(V::Vec2) = hypot(V.x,V.y)
 
 string(v::Vec2) = "($(v.x),$(v.y))"
+
+import Base.convert
+convert(Vector,V) = [V.x,V.y]
+
+import Base.×
+×(V::Vec2,W::Vec2) = V.x*W.y - W.x*V.y
 
 """
     Point2D(x::Real,y::Real; label="",pen=Pen())
@@ -102,7 +109,7 @@ Path2D(<3 points>;pen=MidnightBlue)
 ```
 """
 struct Path2D <: GraphicElement2D
-    points::Array{Vec2,1}
+    points::Array{<:Vec2,1}
     label::AbstractString
     pen::Pen
     arrow::Arrow
@@ -130,11 +137,11 @@ const _DEFAULT_PATH2D_KWARGS =
           :arrow=>NoArrow(),
           :spline=>false)
 
-Path2D(points::Array{Vec2,1};kwargs...) =
+Path2D(points::Array{<:Vec2,1};kwargs...) =
         Path2D(points,updatedvals(_DEFAULT_PATH2D_KWARGS,
                                 process_pen_kwargs(kwargs))...)
 
-Path(points::Array{Vec2,1};kwargs...) = Path2D(points;kwargs...)
+Path(points::Array{<:Vec2,1};kwargs...) = Path2D(points;kwargs...)
 
 Path2D(points::Array{<:Tuple{<:Real,<:Real},1};kwargs...) =
                                 Path2D(map(Vec2,points);kwargs...)
@@ -157,9 +164,9 @@ Path(x,y;kwargs...) = Path2D(x,y;kwargs...)
 
 function Path(coords::Array{<:Real,2};kwargs...)
     if size(coords,2) == 2
-        return Path2D(coords;kwargs...)
+        Path2D(coords;kwargs...)
     else
-        return Path3D(coords;kwargs...)
+        Path3D(coords;kwargs...)
     end
 end
 
@@ -173,7 +180,7 @@ function AsyString(path::Path2D)
         AsyString("""
         file pathdata = input("path{IDENTIFIER}.csv");
         real[][] A = pathdata.csv().dimension(0,2);
-        close(pathdata); 
+        close(pathdata);
         guide $pathname;
         for(int i=0; i<A.length; ++i){
             $pathname = $pathname $spline (A[i][0],A[i][1]);
@@ -195,6 +202,14 @@ function Base.show(io::IO,P::Path2D)
     kwargs = kwargstring(P,_DEFAULT_PATH2D_KWARGS)
     print(io,"""
     Path2D(<$l point$s>$kwargs)""")
+end
+
+import Base.map
+function Base.map(f::Function,P::Path2D)
+    Path(map(f,P.points);label=P.label,
+                         pen=P.pen,
+                         arrow=P.arrow,
+                         spline=P.spline)
 end
 
 #--- 2D CIRCLES ---------------------------------------
@@ -219,12 +234,14 @@ struct Circle2D <: GraphicElement2D
     radius::Real
     pen::Pen
     fillpen::Pen
+    clip::Bool
 end
 
 const _DEFAULT_CIRCLE2D_KWARGS =
     OrderedDict(
         :pen=>Pen(),
-        :fillpen=>NoPen()
+        :fillpen=>NoPen(),
+        :clip=>false
     )
 
 function Circle2D(center::Vec2,
@@ -272,8 +289,13 @@ function AsyString(C::Circle2D)
     drawpen = (is_no_pen(C.pen) || isdefault(C.pen)) ? "" : "$penname=$(C.pen)"
     center = string(C.center)
     circle = "circle($center,$(C.radius))"
-    return AsyString("""
-    $drawcommand($(filterjoin(circle,fillpen,drawpen)));
+    if C.clip
+        clipstatement = "clip($circle);\n"
+    else
+        clipstatement = ""
+    end
+    AsyString("""
+    $clipstatement$drawcommand($(filterjoin(circle,fillpen,drawpen)));
     """)
 end
 
@@ -304,24 +326,26 @@ Polygon2D(<3 points>;pen=MidnightBlue)
 ```
 """
 struct Polygon2D <: GraphicElement2D
-    points::Array{Vec2,1}
+    points::Array{<:Vec2,1}
     pen::Pen
     fillpen::Pen
     spline::Bool
+    clip::Bool
 end
 
 const _DEFAULT_POLYGON2D_KWARGS =
     OrderedDict(
         :pen=>Pen(),
         :fillpen=>NoPen(),
-        :spline=>false
+        :spline=>false,
+        :clip=>false,
     )
 
-Polygon2D(points::Array{Vec2,1};kwargs...) =
+Polygon2D(points::Array{<:Vec2,1};kwargs...) =
        Polygon2D(points,updatedvals(_DEFAULT_POLYGON2D_KWARGS,
                                             process_pen_kwargs(kwargs))...)
 
-Polygon(points::Array{Vec2,1};kwargs...) = Polygon2D(points;kwargs...)
+Polygon(points::Array{<:Vec2,1};kwargs...) = Polygon2D(points;kwargs...)
 
 Polygon2D(points::Array{<:Tuple{<:Real,<:Real},1};kwargs...) =
                                 Polygon2D(map(Vec2,points);kwargs...)
@@ -333,7 +357,12 @@ Polygon2D(points::Array{<:RealOrComplex,1};kwargs...) =
                         Polygon2D(map(Vec2,points);kwargs...)
 
 Polygon(points::Array{<:RealOrComplex,1};kwargs...) =
-                        Polygon2D(map(Vec2,points);kwargs...)
+                      Polygon2D(map(Vec2,points);kwargs...)
+
+function counterclockwise(P::Polygon2D)
+    v = P.points
+    sum(p×q for (p,q) in zip(v,vcat(v[2:end],v[1:1]))) > 0
+end
 
 function Polygon(P::Path2D;kwargs...)
     lastindex = endof(P.points) - (P.points[1] == P.points[end] ? 1 : 0)
@@ -360,9 +389,9 @@ Polygon2D(<3 points>)
 """
 function Polygon(coords::Array{<:Real,2};kwargs...)
     if size(coords,2) == 2
-        return Polygon2D(coords;kwargs...)
+        Polygon2D(coords;kwargs...)
     else
-        return Polygon3D(coords;kwargs...)
+        Polygon3D(coords;kwargs...)
     end
 end
 
@@ -385,23 +414,28 @@ function AsyString(P::Polygon2D)
     pathname = "p{IDENTIFIER}"
     coords = vcat([[p.x p.y] for p in P.points]...)
     spline = P.spline ? ".." : "--"
+    if P.clip
+        clipstatement = "clip($(filterjoin(pathname,fillpen,drawpen)));\n"
+    else
+        clipstatement = ""
+    end
     if length(P.points) > 10
         AsyString("""
         file pathdata = input("path{IDENTIFIER}.csv");
         real[][] A = pathdata.csv().dimension(0,2);
-        close(pathdata); 
+        close(pathdata);
         guide $pathname;
         for(int i=0; i<A.length; ++i){
             $pathname = $pathname $spline (A[i][0],A[i][1]);
         }
         $pathname = $pathname $spline cycle;
-        $drawcommand($(filterjoin(pathname,fillpen,drawpen)));
+        $clipstatement$drawcommand($(filterjoin(pathname,fillpen,drawpen)));
         """,
         Dict("path{IDENTIFIER}.csv"=>coords))
     else
         AsyString("""
         path $pathname = $(join([string(p) for p in P.points],spline))--cycle;
-        $drawcommand($(filterjoin(pathname,fillpen,drawpen)));
+        $clipstatement$drawcommand($(filterjoin(pathname,fillpen,drawpen)));
         """)
     end
 end
@@ -477,7 +511,7 @@ end
 
 
 """
-    Plot2D(elements::Array{<:GraphicElement2D,1},
+    Plot2D(elements::Array{<:GraphicElement,1},
            options::Array{Any,1})
 
 A container for a list of graphics primitives to draw,
@@ -489,20 +523,20 @@ julia> Plot([Path([0 0; 1 1]),Polygon([exp(2*pi*im*k/5) for k=1:5])])
 ```
 """
 struct Plot2D <: Plot
-    elements::Array{<:GraphicElement2D,1}
+    elements::Array{<:GraphicElement,1}
     options::Array{Any,1}
 end
 
-Plot2D(;kwargs...) = Plot2D(GraphicElement2D[],kwargs...) 
+Plot2D(;kwargs...) = Plot2D(GraphicElement[],kwargs...)
 
-Plot2D(elements::Array{<:GraphicElement2D,1};kwargs...) =
-        Plot2D(elements::Array{<:GraphicElement2D,1},kwargs)
+Plot2D(elements::Array{<:GraphicElement,1};kwargs...) =
+        Plot2D(elements,kwargs)
 
-Plot2D(element::GraphicElement2D;kwargs...) = Plot2D([element];kwargs...)
+Plot2D(element::GraphicElement;kwargs...) = Plot2D([element];kwargs...)
 
 function Plot2D(P::Plot2D;kwargs...)
-    return Plot2D(P.elements,updatedvals(
-                        _DEFAULT_PLOT2D_KWARGS,kwargs))
+    Plot2D(P.elements,updatedvals(
+                    _DEFAULT_PLOT2D_KWARGS,kwargs))
 end
 
 Plot(P::Plot2D;kwargs...) = Plot2D(P;kwargs...)
@@ -616,10 +650,13 @@ function +(P::Plot2D,Q::Plot2D)
     options = copy(_DEFAULT_PLOT2D_KWARGS)
     merge!(options,Dict(P.options))
     merge!(options,Dict(Q.options))
-    return Plot2D(elements,collect(options))
+    Plot2D(elements,collect(options))
 end
 
-blue, red, green = [Colors.parse(Colors.Colorant,c) for c in ("MidnightBlue","DarkRed","SeaGreen")]
+# Convenience functions for plotting -------------------
+
+const blue, red, green = [Colors.parse(Colors.Colorant,c) for
+                                c in ("MidnightBlue","DarkRed","SeaGreen")]
 
 """
     plot(x,y;kwargs...)
@@ -632,11 +669,17 @@ given by `x` and `y`
 the `Path2D` object representing the line or to the
 containing `Plot2D`, as appropriate
 
+    plot(xs::Vector{<:Vector{<:Real}},
+         ys::Vector{<:Vector{<:Real}};
+         kwargs...)
+
+Multiple line graphs in the same figure
+
     plot(x,y,z;kwargs...)
     plot(z::Array{<:Real,2};kwargs...)
 
-Return a graph of the surface with ``x``, ``y``, and
-``z`` values `x`, `y`, and `z`
+A graph of the surface with ``x``, ``y``, and ``z``
+values `x`, `y`, and `z`
 
 `x` defaults to `[i-1 for i=1:size(z,1),j=1:size(z,2)]` and
 `y` defaults to `[j-1 for i=1:size(z,1),j=1:size(z,2)]`
@@ -647,64 +690,83 @@ plot(cumsum(randn(100)))
 plot(rand(5,5))
 ```
 """
-function plot(x,y;kwargs...)
+function plot(xs::Vector{<:Vector{<:Real}},
+              ys::Vector{<:Vector{<:Real}};
+              colors=Colors.distinguishable_colors(length(xs),
+                        [blue,red,green],
+                        lchoices=linspace(50,100,15),
+                        cchoices=linspace(50,100,15),
+                        hchoices=linspace(170,340,15)),
+              kwargs...)
+    if length(xs) ≠ length(ys)
+      error("List of x vectors and list of y vectors
+             should have the same length")
+    end
     global _DEFAULT_PATH2D_KWARGS
     pathkwargs, plotkwargs = splitkwargs(process_pen_kwargs(kwargs),
-                                         _DEFAULT_PATH2D_KWARGS)
-    if ~(:pen in keys(Dict(pathkwargs)))
-        push!(pathkwargs,:pen=>Pen(color=blue,linewidth=1.5))
+                                                _DEFAULT_PATH2D_KWARGS)
+    penkwarg = [(a,b) for (a,b) in pathkwargs if a == :pen]
+    if length(penkwarg) > 0
+        ps = [[penkwarg[1]] for c in colors]
+    else
+        ps = [[(:pen,Pen(color=c,linewidth=1.5))] for c in colors]
     end
-    Plot2D([Path2D(x,y;pathkwargs...)];
+    Plot2D([Path2D(x,y;p...,pathkwargs...) for (x,y,p) in zip(xs,ys,ps)];
                    ignoreaspect=true,
                    axes=true,
                    ticks="Ticks(OmitTick(0))",
                    plotkwargs...)
 end
 
-function plot(y::Array{<:Real,1};kwargs...)
-    plot(0:length(y)-1,y;kwargs...)
+function plot(x,ys::Vector{<:Array{<:Real,1}};kwargs...)
+    plot(fill(x,length(ys)),ys;kwargs...)
 end
 
-function plot(f::Function,
+function plot(ys::Vector{<:Array{<:Real,1}};kwargs...)
+    @assert length(Set(map(length,ys))) == 1
+    plot(collect(1:length(ys[1])),ys;kwargs...)
+end
+
+function plot(x::Union{Vector{<:Real},UnitRange},
+              y::Union{Vector{<:Real},UnitRange};kwargs...)
+    plot([collect(x)],[collect(y)];kwargs...)
+end
+
+function plot(y::Array{<:Real,1};kwargs...)
+    plot(collect(0:length(y)-1),y;kwargs...)
+end
+
+function plot(fs,
               a::Real,
               b::Real;
               n::Integer=100,
               kwargs...)
     x = linspace(a,b,n)
-    plot(x,f.(x);kwargs...)
+    plot(collect(x),[f.(x) for f in fs];kwargs...)
 end
 
-function plot(f,t::Tuple{<:Real,<:Real};kwargs...)
-    plot(f,t...;kwargs...)
+function plot(f::Function,a::Real,b::Real;kwargs...)
+    plot([f],a,b;kwargs...)
 end
 
-function plot(L::Vector,a::Real,b::Real;
-              colors=Colors.distinguishable_colors(length(L),
-                        [blue,red,green],
-                        lchoices=linspace(50,100,15),
-                        cchoices=linspace(50,100,15),
-                        hchoices=linspace(170,340,15)),kwargs...)
-    if colors == nothing
-        sum(plot(f,a,b;kwargs...) for f in L)
-    else
-        sum(plot(f,a,b;pen=Pen(color=c,linewidth=1.5),kwargs...) for (f,c) in zip(L,colors))
-    end
+function plot(f_or_fs,t::Tuple{<:Real,<:Real};kwargs...)
+    plot(f_or_fs,t...;kwargs...)
 end
 
 Requires.@require SymPy begin
-    function plot(S::SymPy.Sym,t::Tuple{S,T,U} where U<:Real where T<:Real where S;kwargs...)
+    function plot(S::SymPy.Sym,
+                  t::Tuple{SymPy.Sym,U,V} where U<:Real where V<:Real;
+                  kwargs...)
         plot(SymPy.lambdify(S,t[1:1]),t[2],t[3];kwargs...)
     end
 
-    function plot(L::Vector,t::Tuple{S,T,U} where U<:Real where T<:Real where S;kwargs...)
-        plot([SymPy.lambdify(e,t[1:1]) for e in L],t[2],t[3];kwargs...) 
+    function plot(L::Vector,
+                  t::Tuple{SymPy.Sym,U,V} where U<:Real where V<:Real;
+                  kwargs...)
+        plot([SymPy.lambdify(e,t[1:1]) for e in L],t[2],t[3];kwargs...)
     end
 
-    function plot(L::Vector,x::SymPy.Sym,a::Real,b::Real)
-        plot(L,(x,a,b))
-    end    
-    
-    function plot(S::SymPy.Sym,args...;kwargs...)
-        plot(SymPy.lambdify(S),args...;kwargs...)
+    function plot(L::Vector,x::SymPy.Sym,a::Real,b::Real;kwargs...)
+        plot(L,(x,a,b);kwargs...)
     end
 end

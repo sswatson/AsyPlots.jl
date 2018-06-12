@@ -14,7 +14,7 @@ function process_pen_kwargs(kwargs)
     if length(penkwargs) > 0
         D[:pen] = Pen(;penkwargs...)
     end
-    return collect(D)
+    collect(D)
 end
 
 function kwargstring(P,D::OrderedDict;semicolon=true)
@@ -33,7 +33,7 @@ function updatedvals(defOptions::OrderedDict,newOptions)
     end
     D = deepcopy(defOptions)
     merge!(D,newOptionsDict)
-    return values(D)
+    values(D)
 end
 
 """
@@ -50,7 +50,7 @@ function splitkwargs(pooled_kwargs,options_to_separate)
             separated_kwargs[s] = pop!(remaining_kwargs,s)
         end
     end
-    return map(collect,(separated_kwargs,remaining_kwargs))
+    map(collect,(separated_kwargs,remaining_kwargs))
 end
 
 
@@ -69,3 +69,4 @@ Enclose `s` in quotation marks, unless it starts
 with "Label"
 """
 enclosequote(s) = startswith(s,"Label") ? s : "\"$s\""
+

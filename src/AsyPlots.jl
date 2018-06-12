@@ -17,14 +17,14 @@ import Base: show, print, string, convert, complex, abs,
 export Point, Point2D, Point3D,
        Path, Path2D, Path3D,
        Circle2D, Circle,
-       Polygon2D, Polygon3D, Polygon, box, 
+       Polygon2D, Polygon3D, Polygon, box,
        Label2D, Label3D, Label,
        RawString,
        Surface,
        Plot, Plot2D, Plot3D,
        GraphicElement, GraphicElement2D, GraphicElement3D,
        NamedColor, Pen, NoPen, Arrow, Arrow3, NoArrow,
-       Shift, Shift2D, Scale, Scale2D,
+       Shift, Shift2D, Scale, Scale2D, layout, 
        defaultcolor, isdefault,
        isinside, iswellinside,
        asy, cairo,
@@ -34,11 +34,11 @@ export Point, Point2D, Point3D,
        junosvg, junopng,
        fitwidth, fitheight,
        animate,
-       piechart
+       piechart, histogram
 
 abstract type Plot end
 abstract type GraphicElement end
-abstract type GraphicString end
+abstract type GraphicString <: GraphicElement end
 
 struct AsyString
     str::String
@@ -96,6 +96,6 @@ include("output.jl")
 include("transformations.jl")
 include("tools.jl")
 include("animate.jl")
-include("stats.jl") 
+include("stats.jl")
 
 end # module

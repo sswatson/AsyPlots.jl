@@ -54,8 +54,18 @@ function boundingbox(A::Array{BoundingBox,1};border=0.05)
                        c + margin)
 end
 
-boundingbox(P::Plot2D;kwargs...) = boundingbox(map(boundingbox,
-                                            P.elements);kwargs...)
+function isclip(G::GraphicElement)
+    if isa(G,Circle2D) || isa(G,Polygon2D)
+        G.clip
+    else
+        false
+    end
+end
+
+function boundingbox(P::Plot2D;kwargs...)
+    k = max(1,findlast(isclip,P.elements))
+    boundingbox(map(boundingbox,P.elements[k:end]);kwargs...)
+end
 
 function aspectratio(bb::BoundingBox)
     return (bb.xmax - bb.xmin)/(bb.ymax - bb.ymin)
@@ -87,6 +97,7 @@ function arrowhead(P::Path2D,bb::BoundingBox)
 end
 
 function addtocontext!(cr::Cairo.CairoContext,
+                       Pl::Plot2D,
                        P::Path2D,
                        bb::BoundingBox)
     Cairo.set_line_width(cr,lwcorrect(P.pen.linewidth))
@@ -110,10 +121,30 @@ function addtocontext!(cr::Cairo.CairoContext,
 end
 
 function addtocontext!(cr::Cairo.CairoContext,
+                       Pl::Plot2D,
                        P::Polygon2D,
                        bb::BoundingBox)
-    if is_no_pen(P.fillpen) && is_no_pen(P.pen)
+    if is_no_pen(P.fillpen) && is_no_pen(P.pen) && !P.clip
         return nothing
+    end
+    if P.clip
+        Cairo.move_to(cr,P.points[1].x,P.points[1].y);
+        for i=2:length(P.points)
+            Cairo.line_to(cr,P.points[i].x,P.points[i].y);
+        end
+        Cairo.move_to(cr,bb.xmin,bb.ymin)
+        if counterclockwise(P)
+            Cairo.line_to(cr,bb.xmin,bb.ymax)
+            Cairo.line_to(cr,bb.xmax,bb.ymax)
+            Cairo.line_to(cr,bb.xmax,bb.ymin)
+        else
+            Cairo.line_to(cr,bb.xmax,bb.ymin)
+            Cairo.line_to(cr,bb.xmax,bb.ymax)
+            Cairo.line_to(cr,bb.xmin,bb.ymax)
+        end
+        Cairo.close_path(cr)
+        Cairo.set_source_rgba(cr,Dict(Pl.options)[:bgcolor].color...,1)
+        Cairo.fill(cr)
     end
     Cairo.set_line_width(cr,lwcorrect(P.pen.linewidth))
     Cairo.move_to(cr,P.points[1].x,P.points[1].y);
@@ -136,8 +167,19 @@ function addtocontext!(cr::Cairo.CairoContext,
 end
 
 function addtocontext!(cr::Cairo.CairoContext,
+                       Pl::Plot2D,
                        c::Circle2D,
                        bb::BoundingBox)
+    if c.clip
+        Cairo.arc(cr, c.center.x, c.center.y, c.radius, 0, 2*pi)
+        Cairo.move_to(cr,bb.xmin,bb.ymin)
+        Cairo.line_to(cr,bb.xmin,bb.ymax)
+        Cairo.line_to(cr,bb.xmax,bb.ymax)
+        Cairo.line_to(cr,bb.xmax,bb.ymin)
+        Cairo.close_path(cr)
+        Cairo.set_source_rgba(cr,Dict(Pl.options)[:bgcolor].color...,1)
+        Cairo.fill(cr)
+    end
 
     Cairo.set_line_width(cr,lwcorrect(c.pen.linewidth))
     Cairo.arc(cr, c.center.x, c.center.y, c.radius, 0, 2*pi)
@@ -152,6 +194,7 @@ function addtocontext!(cr::Cairo.CairoContext,
 end
 
 function addtocontext!(cr::Cairo.CairoContext,
+                       Pl::Plot2D,
                        p::Point2D,
                        bb::BoundingBox)
     m = min(bb.xmax-bb.xmin,bb.ymax-bb.ymin)
@@ -162,10 +205,12 @@ function addtocontext!(cr::Cairo.CairoContext,
 end
 
 function addtocontext!(cr::Cairo.CairoContext,
+                       Pl::Plot2D,
                        L::Label2D,
                        bb::BoundingBox)
     Cairo.save(cr)
-    Cairo.set_font_size(cr,2.5e-3*L.pen.fontsize)
+    m = min(bb.xmax-bb.xmin,bb.ymax-bb.ymin)
+    Cairo.set_font_size(cr,2.5e-3*m*L.pen.fontsize)
     Cairo.set_source_rgb(cr,L.pen.color...)
     x_bearing, y_bearing, width, height =
                         Cairo.text_extents(cr,L.s)
@@ -173,6 +218,7 @@ function addtocontext!(cr::Cairo.CairoContext,
                      L.location.y + height/2 + y_bearing)
     Cairo.scale(cr,1,-1)
     Cairo.show_text(cr,L.s)
+    Cairo.stroke(cr) 
     Cairo.restore(cr)
 end
 
@@ -219,7 +265,7 @@ function bytes(P::Plot2D;format=:png,bbox=false,border=3)
     Cairo.set_line_width(context,1)
     Cairo.set_line_join(context, Cairo.Cairo.CAIRO_LINE_JOIN_ROUND)
     for e in P.elements
-        addtocontext!(context,e,bb)
+        addtocontext!(context,P,e,bb)
     end
     if format == :png
         Cairo.write_to_png(surface,iobuffer)

@@ -13,8 +13,7 @@ import ColorTypes,
 
 import DataStructures: OrderedDict
 
-import Base: show, print, string, convert, complex, abs,
-             start, next, done,
+import Base: show, print, string, convert, complex, abs, iterate, 
              +, *, -, ==
 
 export Point, Point2D, Point3D,

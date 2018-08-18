@@ -7,7 +7,7 @@ struct BoundingBox
 end
 
 const colorplaces = [:r,:g,:b]
-import Base.iterate
+
 iterate(c::ColorTypes.RGB) = (getfield(c,first(colorplaces)),2)
 iterate(c::ColorTypes.RGB,i) = i > 3 ? nothing : (getfield(c,colorplaces[i]),i+1)
 

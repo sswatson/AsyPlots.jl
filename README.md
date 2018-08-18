@@ -4,10 +4,6 @@
 
 [![Build Status](https://travis-ci.org/sswatson/AsyPlots.jl.svg?branch=master)](https://travis-ci.org/sswatson/AsyPlots.jl)
 
-[![Coverage Status](https://coveralls.io/repos/sswatson/AsyPlots.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/sswatson/AsyPlots.jl?branch=master)
-
-[![codecov.io](http://codecov.io/github/sswatson/AsyPlots.jl/coverage.svg?branch=master)](http://codecov.io/github/sswatson/AsyPlots.jl?branch=master)
-
 # AsyPlots.jl
 
 [Documentation](https://sswatson.github.io/AsyPlots.jl/stable)

@@ -7,13 +7,12 @@ struct BoundingBox
 end
 
 const colorplaces = [:r,:g,:b]
-start(c::ColorTypes.RGB) = 1
-next(c::ColorTypes.RGB,i) = (getfield(c,colorplaces[i]),i+1)
-done(c::ColorTypes.RGB,i) = i > 3
+import Base.iterate
+iterate(c::ColorTypes.RGB) = (getfield(c,first(colorplaces)),2)
+iterate(c::ColorTypes.RGB,i) = i > 3 ? nothing : (getfield(c,colorplaces[i]),i+1)
 
-start(c::NamedColor) = start(c.color)
-next(c::NamedColor,i) = next(c.color,i)
-done(c::NamedColor,i) = done(c.color,i)
+iterate(c::NamedColor) = iterate(c.color)
+iterate(c::NamedColor,i) = iterate(c.color,i)
 
 +(P::Vec2,Q::Vec2) = Vec2(P.x+Q.x,P.y+Q.y)
 -(Q::Vec2) = Vec2(-Q.x,-Q.y)

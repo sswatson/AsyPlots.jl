@@ -67,6 +67,11 @@ function boundingbox(P::Plot2D;kwargs...)
     boundingbox(map(boundingbox,P.elements[k:end]);kwargs...)
 end
 
+function boundingbox(P::PixelMap)
+    BoundingBox(P.lowerleft[1],P.upperright[1],
+                P.lowerleft[2],P.upperright[2])
+end
+
 function aspectratio(bb::BoundingBox)
     return (bb.xmax - bb.xmin)/(bb.ymax - bb.ymin)
 end
@@ -218,8 +223,24 @@ function addtocontext!(cr::Cairo.CairoContext,
                      L.location.y + height/2 + y_bearing)
     Cairo.scale(cr,1,-1)
     Cairo.show_text(cr,L.s)
-    Cairo.stroke(cr) 
+    Cairo.stroke(cr)
     Cairo.restore(cr)
+end
+
+function addtocontext!(cr::Cairo.CairoContext,
+                       Pl::Plot2D,
+                       P::PixelMap,
+                       bb::BoundingBox)
+    m,n = size(P.pixels)
+    a,b = P.lowerleft
+    c,d = P.upperright
+    for i=0:m-1
+        for j=0:n-1
+            Cairo.rectangle(cr,a+(c-a)*i/m,b+(d-b)*j/n,(c-a)/m,(d-b)/n)
+            Cairo.set_source_rgba(cr,P.pixels[i+1,j+1].color...,P.alpha[i+1,j+1])
+            Cairo.fill(cr)
+        end
+    end
 end
 
 function bytes(P::Plot2D;format=:png,bbox=false,border=3)

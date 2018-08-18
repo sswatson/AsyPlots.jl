@@ -50,7 +50,7 @@ function save(filename::AbstractString,
                 directory = "."
             end
             for (k,v) in S.data
-                writecsv("$directory/$k",v)
+                DelimitedFiles.writedlm("$directory/$k",v,',')
             end
             if runasy
                 originaldir = pwd()
@@ -65,12 +65,12 @@ function save(filename::AbstractString,
             tempdir = mktempdir()
             asyfile = "$tempdir/myplot.asy"
             pdffile = "$tempdir/myplot.pdf"
-            runasy = ~endswith(filename,".asy")
+            runasy = !endswith(filename,".asy")
             save(asyfile,P;runasy=runasy,forcepdf=true)
             if endswith(filename,".asy")
-                mv(asyfile,filename,remove_destination=true)
+                mv(asyfile,filename,force=true)
             elseif endswith(filename,".pdf")
-                mv(pdffile,filename,remove_destination=true)
+                mv(pdffile,filename,force=true)
             elseif endswith(filename,".png")
                 global _DEFAULT_WIDTH
                 D = Dict{Symbol,Any}(P.options)
@@ -192,11 +192,11 @@ function Base.show(io::IO,::MIME"text/plain",P::Plot)
         filename = "$tempdir/myplot.pdf"
         save(filename,P)
         try
-            if is_apple()
+            if Sys.isapple()
                 run(`open $filename`)
-            elseif is_linux() || is_bsd()
+            elseif Sys.islinux() || is_bsd()
                 run(`xdg-open $filename`)
-            elseif is_windows()
+            elseif Sys.iswindows()
                 run(`start $filename`)
             end
         catch e
@@ -212,111 +212,4 @@ function Base.show(io::IO,::MIME"text/plain",P::Plot)
     end
 end
 
-Requires.@require Juno begin
 
-    _JUNO_ASY_FORMAT = "svg"
-    _JUNO_CAIRO_FORMAT = "png"
-    _FIT_DIMENSION = "height"
-
-    """
-        fitheight()
-
-    Set the figures appearing in the Juno plot
-    pane to match its height
-    """
-    fitheight() = (global _FIT_DIMENSION; _FIT_DIMENSION = "height")
-    """
-        fitwidth()
-
-    Set the figures appearing in the Juno plot
-    pane to match its width
-    """
-    fitwidth() = (global _FIT_DIMENSION; _FIT_DIMENSION = "width")
-
-    """
-        junosvg()
-
-    Set the default output format for the Juno
-    plot pane to svg
-    """
-    function junosvg()
-        global _JUNO_ASY_FORMAT
-        global _JUNO_CAIRO_FORMAT
-        _JUNO_ASY_FORMAT = "svg"
-        _JUNO_CAIRO_FORMAT = "svg"
-    end
-    """
-        junopng()
-
-    Set the default output format for the Juno
-    plot pane to png
-    """
-    function junopng()
-        global _JUNO_ASY_FORMAT
-        global _JUNO_CAIRO_FORMAT
-        _JUNO_ASY_FORMAT = "png"
-        _JUNO_CAIRO_FORMAT = "png"
-    end
-
-    import Hiccup, Media
-    Media.media(Plot2D,Media.Plot)
-    Media.media(Plot3D,Media.Plot)
-
-    function Juno.render(pane::Juno.PlotPane,P::Plot2D)
-        global _BACKEND
-        global _JUNO_ASY_FORMAT
-        global _JUNO_CAIRO_FORMAT
-        global _FIT_DIMENSION
-        tempdir = mktempdir()
-        w,h = Juno.plotsize()
-        fitdim = _FIT_DIMENSION
-        dimarg = (Symbol(fitdim) => (fitdim == "height" ? h : w),)
-        if _BACKEND == "asy"
-            filename = "$tempdir/myplot.$_JUNO_ASY_FORMAT"
-            save(filename,P)
-            D = Dict{Symbol,Any}(P.options)
-            Juno.render(pane,Hiccup.div(
-                    style="text-align:center",
-                    Hiccup.img(src="$tempdir/myplot.$_JUNO_ASY_FORMAT";
-                               dimarg...)))
-        else
-            save("$tempdir/myplot.$_JUNO_CAIRO_FORMAT",P)
-            Juno.render(pane,Hiccup.div(
-                    style="text-align:center",
-                    Hiccup.img(src="$tempdir/myplot.$_JUNO_CAIRO_FORMAT";
-                               dimarg...)))
-        end
-    end
-
-    function Juno.render(pane::Juno.PlotPane,P::Plot3D)
-        global _BACKEND
-        if _BACKEND == "cairo"
-            return
-        end
-        w,h = Juno.plotsize()
-        tempdir = mktempdir()
-        filename = "$tempdir/myplot.png"
-        save(filename,P)
-        Juno.render(pane,Hiccup.div(style="text-align:center",
-                Hiccup.img(height=h,src="$tempdir/myplot.png")))
-    end
-end
-
-Requires.@require Contour begin
-    function Path2D(curve::Contour.Curve2{Float64};kwargs...)
-        cv = curve.vertices
-        return Path2D(hcat(Float64[cv[k][1] for k=1:length(cv)],
-                           Float64[cv[k][2] for k=1:length(cv)]);kwargs...)
-    end
-    Path(curve::Contour.Curve2{Float64};kwargs...) =
-        Path2D(curve;kwargs...)
-
-    function Polygon2D(curve::Contour.Curve2{Float64};kwargs...)
-        cv = curve.vertices
-        return Polygon2D(hcat(Float64[cv[k][1] for k=1:length(cv)],
-                              Float64[cv[k][2] for k=1:length(cv)]);kwargs...)
-    end
-    Polygon(curve::Contour.Curve2{Float64};kwargs...) =
-        Polygon2D(curve;kwargs...)
-
-end

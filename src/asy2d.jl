@@ -18,9 +18,9 @@ abs(V::Vec2) = hypot(V.x,V.y)
 string(v::Vec2) = "($(v.x),$(v.y))"
 
 import Base.convert
-convert(Vector,V) = [V.x,V.y]
+convert(::Type{Vector},V::Vec2) = [V.x,V.y]
 
-import Base.×
+import LinearAlgebra.×
 ×(V::Vec2,W::Vec2) = V.x*W.y - W.x*V.y
 
 """
@@ -347,6 +347,8 @@ Polygon2D(points::Array{<:Vec2,1};kwargs...) =
 
 Polygon(points::Array{<:Vec2,1};kwargs...) = Polygon2D(points;kwargs...)
 
+Polygon(points::Array{<:Tuple{<:Real,<:Real},1};kwargs...) = Polygon2D(points;kwargs...)
+
 Polygon2D(points::Array{<:Tuple{<:Real,<:Real},1};kwargs...) =
                                 Polygon2D(map(Vec2,points);kwargs...)
 
@@ -506,6 +508,138 @@ function Base.show(io::IO,L::Label2D)
     print(io,"Label2D($(enclosequote(L.s)),($(L.location.x),$(L.location.y))$kwargs)")
 end
 
+#--- Pixel Maps ---------------------------------------
+
+struct PixelMap <: GraphicElement2D
+    pixels::Array{NamedColor,2}
+    alpha::Array{<:Real,2}
+    lowerleft::Tuple{Real,Real}
+    upperright::Tuple{Real,Real}
+    smooth::Bool
+    antialias::Bool
+end
+
+const _DEFAULT_PIXELMAP_KWARGS =
+    OrderedDict(
+        :smooth => false,
+        :antialias => false
+    )
+
+function PixelMap(pixels::Array{NamedColor,2},
+                  lowerleft::Tuple{Real,Real},
+                  upperright::Tuple{Real,Real};kwargs...)
+    PixelMap(pixels,ones(size(pixels)...),lowerleft,upperright;kwargs...)
+end
+
+function PixelMap(pixels::Array{NamedColor,2},
+                  alpha::Array{<:Real,2},
+                  lowerleft::Tuple{Real,Real},
+                  upperright::Tuple{Real,Real};
+                  kwargs...)
+    PixelMap(pixels,alpha,lowerleft,upperright,
+                updatedvals(_DEFAULT_PIXELMAP_KWARGS,kwargs)...)
+end
+
+function Base.show(io::IO,P::PixelMap)
+    m,n = size(P.pixels)
+    a,b = P.lowerleft
+    c,d = P.upperright
+    print(io,"PixelMap(<$(m)×$(n)>,[$a,$c]×[$b,$d])")
+end
+
+function AsyString(P::PixelMap)
+    r(N::NamedColor) = Float64(N.color.r)
+    g(N::NamedColor) = Float64(N.color.g)
+    b(N::NamedColor) = Float64(N.color.b)
+
+    imagecommands = if P.smooth
+        """
+        pen[][] pixels = new pen[m][n];
+        for(int i=0;i<m;++i){
+          for(int j=0;j<n;++j){
+              pixels[i][j] = (rgb(redvalues[i][j],
+                                 greenvalues[j][j],
+                                 bluevalues[i][j]) +
+                                 opacity(alphavalues[i][j]));
+          }
+        }
+
+        image(pixels,$(P.lowerleft),$(P.upperright),antialias=$(P.antialias));
+        """
+    else
+        """
+        for(int i=0;i<m;++i){
+          for(int j=0;j<n;++j){
+            if (alphavalues[i][j] > 0) {
+              fill(box((a+i/m*(c-a),b+j/n*(d-b)),
+                       (a+(i+1)/m*(c-a),b+(j+1)/n*(d-b))),
+                       p=rgb(redvalues[i][j],
+                               greenvalues[i][j],
+                               bluevalues[i][j])+
+                               opacity(alphavalues[i][j]));
+            }
+          }
+        }
+        """
+    end
+    AsyString("""
+    int m = $(size(P.pixels,1));
+    int n = $(size(P.pixels,2));
+    file reds = input("red{IDENTIFIER}.csv");
+    real[][] redvalues = reds.csv().dimension(m,n);
+    close(reds);
+    file blues = input("blue{IDENTIFIER}.csv");
+    real[][] bluevalues = blues.csv().dimension(m,n);
+    close(reds);
+    file greens = input("green{IDENTIFIER}.csv");
+    real[][] greenvalues = greens.csv().dimension(m,n);
+    close(reds);
+    file alphas = input("alpha{IDENTIFIER}.csv");
+    real[][] alphavalues = alphas.csv().dimension(m,n);
+    close(alphas);
+
+    real a = $(Float64(P.lowerleft[1]));
+    real b = $(Float64(P.lowerleft[2]));
+    real c = $(Float64(P.upperright[1]));
+    real d = $(Float64(P.upperright[2]));
+
+    $imagecommands
+
+    """,
+    Dict("red{IDENTIFIER}.csv"=>r.(P.pixels),
+         "green{IDENTIFIER}.csv"=>g.(P.pixels),
+         "blue{IDENTIFIER}.csv"=>b.(P.pixels),
+         "alpha{IDENTIFIER}.csv"=>P.alpha))
+end
+
+
+const _DEFAULT_HEATMAP_KWARGS =
+    OrderedDict(
+         :colors => ["MidnightBlue",
+                     "LightSeaGreen",
+                     "Yellow",
+                     "Tomato"]
+    )
+
+function heatmap(A::Array{<:Real,2};
+                 colors=NamedColor.(_DEFAULT_HEATMAP_KWARGS[:colors]),
+                 kwargs...)
+    m,M = extrema(A)
+    C = [cmap(colors,(A[i,j]-m)/(M-m)) for i=1:size(A,1),j=1:size(A,2)]
+    Plot(PixelMap(C,(0,0),size(A);kwargs...))
+end
+
+function cmap(colors::Array{NamedColor,1},r::Real)
+    fpart, ipart = modf(1 + r*(length(colors)-1))
+    if fpart == 0
+        colors[Int(ipart)]
+    else
+        (1-fpart) * colors[Int(ipart)] + fpart * colors[Int(ipart)+1]
+    end
+end
+
+#------------------------------------------------------
+
 #--- 2D PLOTS -----------------------------------------
 #------------------------------------------------------
 
@@ -530,7 +664,7 @@ end
 Plot2D(;kwargs...) = Plot2D(GraphicElement[],kwargs...)
 
 Plot2D(elements::Array{<:GraphicElement,1};kwargs...) =
-        Plot2D(elements,kwargs)
+        Plot2D(elements,collect(kwargs))
 
 Plot2D(element::GraphicElement;kwargs...) = Plot2D([element];kwargs...)
 
@@ -618,16 +752,17 @@ function AsyString(P::Plot2D)
                                     for s in D[:packages])
 
     asystrings = map(AsyString,P.elements)
-    drawingcommands = join(replace(s.str,"{IDENTIFIER}",string(j))
+    drawingcommands = join(replace(s.str,"{IDENTIFIER}"=>string(j))
                                 for (j,s) in enumerate(asystrings))
 
     data = [A.data for A in asystrings]
-    merged_data = merge([Dict(replace(k,"{IDENTIFIER}",j) => v
+    merged_data = merge([Dict(replace(k,"{IDENTIFIER}"=>j) => v
                 for (k,v) in D) for (j,D) in enumerate(data)]...)
 
     AsyString("""
     import x11colors;
     import graph;
+    import palette;
 
     $pdf
 
@@ -694,9 +829,9 @@ function plot(xs::Vector{<:Vector{<:Real}},
               ys::Vector{<:Vector{<:Real}};
               colors=Colors.distinguishable_colors(length(xs),
                         [blue,red,green],
-                        lchoices=linspace(50,100,15),
-                        cchoices=linspace(50,100,15),
-                        hchoices=linspace(170,340,15)),
+                        lchoices=range(50,stop=100,length=15),
+                        cchoices=range(50,stop=100,length=15),
+                        hchoices=range(170,stop=340,length=15)),
               kwargs...)
     if length(xs) ≠ length(ys)
       error("List of x vectors and list of y vectors
@@ -741,7 +876,7 @@ function plot(fs,
               b::Real;
               n::Integer=100,
               kwargs...)
-    x = linspace(a,b,n)
+    x = range(a,stop=b,length=n)
     plot(collect(x),[f.(x) for f in fs];kwargs...)
 end
 
@@ -753,20 +888,3 @@ function plot(f_or_fs,t::Tuple{<:Real,<:Real};kwargs...)
     plot(f_or_fs,t...;kwargs...)
 end
 
-Requires.@require SymPy begin
-    function plot(S::SymPy.Sym,
-                  t::Tuple{SymPy.Sym,U,V} where U<:Real where V<:Real;
-                  kwargs...)
-        plot(SymPy.lambdify(S,t[1:1]),t[2],t[3];kwargs...)
-    end
-
-    function plot(L::Vector,
-                  t::Tuple{SymPy.Sym,U,V} where U<:Real where V<:Real;
-                  kwargs...)
-        plot([SymPy.lambdify(e,t[1:1]) for e in L],t[2],t[3];kwargs...)
-    end
-
-    function plot(L::Vector,x::SymPy.Sym,a::Real,b::Real;kwargs...)
-        plot(L,(x,a,b);kwargs...)
-    end
-end

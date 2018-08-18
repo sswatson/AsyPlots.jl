@@ -6,7 +6,10 @@ import ColorTypes,
        Colors,
        Requires,
        Cairo,
-       ProgressMeter
+       ProgressMeter,
+       Contour,
+       Interpolations,
+       DelimitedFiles
 
 import DataStructures: OrderedDict
 
@@ -19,22 +22,24 @@ export Point, Point2D, Point3D,
        Circle2D, Circle,
        Polygon2D, Polygon3D, Polygon, box,
        Label2D, Label3D, Label,
+       PixelMap, heatmap,
        RawString,
        Surface,
        Plot, Plot2D, Plot3D,
        GraphicElement, GraphicElement2D, GraphicElement3D,
        NamedColor, Pen, NoPen, Arrow, Arrow3, NoArrow,
-       Shift, Shift2D, Scale, Scale2D, layout, 
+       Shift, Shift2D, Scale, Scale2D, layout,
        defaultcolor, isdefault,
        isinside, iswellinside,
        asy, cairo,
        plot,
        interactive,
+       isolines,
        save,
-       junosvg, junopng,
+       junosvg, junopng, junodefault, 
        fitwidth, fitheight,
        animate,
-       piechart, histogram
+       piechart, histogram 
 
 abstract type Plot end
 abstract type GraphicElement end
@@ -97,5 +102,7 @@ include("transformations.jl")
 include("tools.jl")
 include("animate.jl")
 include("stats.jl")
+include("contours.jl")
+include("init.jl")
 
 end # module

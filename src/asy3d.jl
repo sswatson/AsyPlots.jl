@@ -199,8 +199,8 @@ function Surface(z::Array{<:Real,2};kwargs...)
     Surface(x,y,z;kwargs...)
 end
 
-function Surface(x::Union{Array{<:Real,1},Range},
-                 y::Union{Array{<:Real,1},Range},
+function Surface(x::Union{Array{<:Real,1},AbstractRange},
+                 y::Union{Array{<:Real,1},AbstractRange},
                  z::Array{<:Real,2};kwargs...)
     xtwo = [xi for xi=x,yi=y]
     ytwo = [yi for xi=x,yi=y]
@@ -339,7 +339,7 @@ Polygon3D(coords::Array{<:Real,2};kwargs...) =
             Polygon3D([Vec3(coords[i,:]...) for i=1:size(coords,1)];kwargs...)
 
 Polygon3D(points::Array{<:RealOrComplex,1};kwargs...) =
-                        Polygon3D(map(Vec3,points);kwargs)
+                        Polygon3D(map(Vec3,points);kwargs...)
 
 function Polygon(P::Path3D;kwargs...)
     lastindex = endof(P.points) - (P.points[1] == P.points[end] ? 1 : 0)
@@ -442,7 +442,7 @@ end
 Plot3D() = Plot3D(GraphicElement[],[])
 
 function Plot3D(elements::Array{<:GraphicElement};kwargs...)
-    Plot3D(elements,kwargs)
+    Plot3D(elements,collect(kwargs))
 end
 
 Plot3D(element::GraphicElement;kwargs...) = Plot3D([element];kwargs...)
@@ -543,11 +543,11 @@ function AsyString(P::Plot3D)
     shipout = D[:pdf] ? "shipout(bbox(3.0,invisible));" : ""
 
     asystrings = map(AsyString,P.elements)
-    drawingcommands = join(replace(s.str,"{IDENTIFIER}",string(j))
+    drawingcommands = join(replace(s.str,"{IDENTIFIER}"=>string(j))
                                 for (j,s) in enumerate(asystrings))
 
     data = [A.data for A in asystrings]
-    merged_data = merge([Dict(replace(k,"{IDENTIFIER}",j) => v
+    merged_data = merge([Dict(replace(k,"{IDENTIFIER}"=>j) => v
                 for (k,v) in D) for (j,D) in enumerate(data)]...)
 
     AsyString("""
@@ -612,28 +612,6 @@ end
 
 plot(f::Function,x::Tuple{<:Real,<:Real},y::Tuple{<:Real,<:Real};kwargs...) =
     plot(f,x...,y...;kwargs...)
-
-Requires.@require SymPy begin
-
-    SR = Union{Real,SymPy.Sym}
-
-    plot(S::SymPy.Sym,
-         a::SR,
-         b::SR,
-         c::SR,
-         d::SR;
-         kwargs...)  =
-             plot(SymPy.lambdify(S),map(SymPy.N,(a,b,c,d))...;kwargs...)
-
-    plot(S::SymPy.Sym,
-         x::Tuple{<:SR,<:SR},
-         y::Tuple{<:SR,<:SR};kwargs...) = plot(f,x...,y...;kwargs...)
-
-    plot(S::SymPy.Sym,
-         x::Tuple{SymPy.Sym,<:SR,<:SR},
-         y::Tuple{SymPy.Sym,<:SR,<:SR};kwargs...) =
-      plot(SymPy.lambdify(S,[x[1],y[1]]),x[2:end]...,y[2:end]...;kwargs...)
-end
 
 function interactive(P::Plot3D;kwargs...)
     check_asy_present()

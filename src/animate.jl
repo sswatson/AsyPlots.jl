@@ -31,7 +31,7 @@ function animate(filename::AbstractString,
         save(filename,P,bbox=bb)
     end
     run(`ffmpeg -r $rate -i $tempdir/frame%0$(e)d.png -pix_fmt yuv420p $tempdir/mymovie.mp4`)
-    if filename == ""
+    if filename ≠ ""
         cp("$tempdir/mymovie.mp4",filename)
     else
         try

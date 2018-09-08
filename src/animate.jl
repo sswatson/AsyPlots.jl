@@ -35,11 +35,11 @@ function animate(filename::AbstractString,
         cp("$tempdir/mymovie.mp4",filename)
     else
         try
-            if is_apple()
+            if Sys.isapple()
                 run(`open $tempdir/mymovie.mp4`)
-            elseif is_linux() || is_bsd()
+            elseif Sys.islinux() || Sys.isbsd()
                 run(`xdg-open $tempdir/mymovie.mp4`)
-            elseif is_windows()
+            elseif Sys.iswindows()
                 run(`start $tempdir/mymovie.mp4`)
             end
         catch e

@@ -62,7 +62,7 @@ function isclip(G::GraphicElement)
 end
 
 function boundingbox(P::Plot2D;kwargs...)
-    k = max(1,findlast(isclip,P.elements))
+    k = something(findlast(isclip,P.elements),1)
     boundingbox(map(boundingbox,P.elements[k:end]);kwargs...)
 end
 

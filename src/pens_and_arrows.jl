@@ -44,7 +44,7 @@ function ==(C::NamedColor,D::NamedColor)
 end
 
 function Base.show(io::IO,NC::NamedColor)
-    t = map(x->round(Float64(x),2),(NC.color.r,NC.color.g,NC.color.b))
+    t = map(x->round(Float64(x);digits=2),(NC.color.r,NC.color.g,NC.color.b))
     print(io,"""NamedColor("$(NC.name)",$t)""")
 end
 
@@ -142,6 +142,7 @@ end
 NoArrow() = Arrow(;name="None")
 Arrow(n) = Arrow(size=n)
 Arrow3(n) = Arrow3(size=n)
+Arrows(;kwargs...) = Arrow(name="Arrows";kwargs...)
 
 ==(A::Arrow,B::Arrow) = all(getfield(A,k) == getfield(B,k)
                                     for k in fieldnames(Arrow))

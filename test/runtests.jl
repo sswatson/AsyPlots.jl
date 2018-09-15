@@ -1,5 +1,5 @@
 using AsyPlots
-using Base.Test
+using Test
 
 # 2D
 Pen()

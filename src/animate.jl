@@ -27,19 +27,19 @@ function animate(filename::AbstractString,
     N = 10^e
     tempdir = mktempdir()
     ProgressMeter.@showprogress for (i,P) in enumerate(plots)
-        filename = "$tempdir/frame$(string(N+i-1)[2:end]).png"
-        save(filename,P,bbox=bb)
+        framename = "$tempdir/frame$(string(N+i-1)[2:end]).png"
+        save(framename,P,bbox=bb)
     end
     run(`ffmpeg -r $rate -i $tempdir/frame%0$(e)d.png -pix_fmt yuv420p $tempdir/mymovie.mp4`)
     if filename ≠ ""
-        cp("$tempdir/mymovie.mp4",filename)
+        cp("$tempdir/mymovie.mp4",filename;force=true)
     else
         try
-            if is_apple()
+            if Sys.isapple()
                 run(`open $tempdir/mymovie.mp4`)
-            elseif is_linux() || is_bsd()
+            elseif Sys.islinux() || Sys.isbsd()
                 run(`xdg-open $tempdir/mymovie.mp4`)
-            elseif is_windows()
+            elseif Sys.iswindows()
                 run(`start $tempdir/mymovie.mp4`)
             end
         catch e

@@ -105,9 +105,21 @@ function showplots(b::Bool)
     """Plot display turned $(b ? "on" : "off")"""
 end
 
-Base.mimewritable(::MIME"image/svg+xml",P::Plot2D) = false
-Base.mimewritable(::MIME"image/svg+xml",P::Plot3D) = false
-Base.mimewritable(::MIME"image/png",P::Plot2D) = true
+Base.showable(::MIME"image/svg+xml",P::Plot2D) = true
+Base.showable(::MIME"image/svg+xml",P::Plot3D) = true
+Base.showable(::MIME"image/png",P::Plot2D) = true
+
+function png()
+    @eval Base.showable(::MIME"image/svg+xml",P::Plot2D) = false
+    @eval Base.showable(::MIME"image/svg+xml",P::Plot3D) = false
+    "Turning svg display off"
+end
+
+function svg()
+    @eval Base.showable(::MIME"image/svg+xml",P::Plot2D) = true
+    @eval Base.showable(::MIME"image/svg+xml",P::Plot3D) = true
+    "Turning svg display on"
+end
 
 function Base.show(io::IO, ::MIME"image/svg+xml", P::Plot2D)
     if length(P.elements) == 0

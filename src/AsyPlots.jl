@@ -5,7 +5,6 @@ module AsyPlots
 import ColorTypes,
        Colors,
        Requires,
-       Cairo,
        ProgressMeter,
        Contour,
        Interpolations,
@@ -13,8 +12,7 @@ import ColorTypes,
 
 import DataStructures: OrderedDict
 
-import Base: show, print, string, convert, complex, abs,
-             start, next, done,
+import Base: show, print, string, convert, complex, abs, iterate, 
              +, *, -, ==
 
 export Point, Point2D, Point3D,
@@ -51,7 +49,7 @@ struct AsyString
 end
 
 _BACKEND = "asy"
-_DEFAULT_WIDTH = 512
+_DEFAULT_WIDTH = 256
 
 function defaultwidth(n::Integer)
     global _DEFAULT_WIDTH

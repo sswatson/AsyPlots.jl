@@ -1,5 +1,8 @@
 
-![fgf](images/header.svg)
+![fgf](images/header.svg) 
+
+
+[![Build Status](https://travis-ci.org/sswatson/AsyPlots.jl.svg?branch=master)](https://travis-ci.org/sswatson/AsyPlots.jl)
 
 # AsyPlots.jl
 
@@ -26,8 +29,17 @@ This package provides access to
 
 *AsyPlots* requires Asymptote, which you might already have as a part
 of your TeX installation (run `asy --version` from the command line to
-check). If you want to use the Cairo backend, install `Cairo.jl` via
-`Pkg.add(Cairo)`.
+check). 
+
+Asymptote can optionally use an alternative backend that relies on `Cairo.jl`, though
+this package is currently not installing cleanly. 
+Try 
+```julia
+using Homebrew
+Homebrew.brew(`reinstall fontconfig`)
+Pkg.build("Cairo")
+```
+See [this thread](https://github.com/JuliaGraphics/Cairo.jl/issues/230) for more details. 
 
 ## Examples
 

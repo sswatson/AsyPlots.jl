@@ -1,5 +1,6 @@
 function __init__()
 
+<<<<<<< HEAD
     Requires.@require Cairo="159f3aea-2a34-519c-b102-8c37f9878175" begin
         function addtocontext!(cr::Cairo.CairoContext,
                                Pl::Plot2D,
@@ -198,6 +199,8 @@ function __init__()
 
     end
 
+=======
+>>>>>>> 24d6ed9c3de88391cd1a88aa811ca2e42e2fa166
     Requires.@require SymPy="24249f21-da20-56a4-8eb1-6a02cf4ae2e6" begin
         function plot(S::SymPy.Sym,
                       t::Tuple{SymPy.Sym,U,V} where U<:Real where V<:Real;

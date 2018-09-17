@@ -1,6 +1,5 @@
 function __init__()
-
-<<<<<<< HEAD
+    
     Requires.@require Cairo="159f3aea-2a34-519c-b102-8c37f9878175" begin
         function addtocontext!(cr::Cairo.CairoContext,
                                Pl::Plot2D,
@@ -49,7 +48,9 @@ function __init__()
                     Cairo.line_to(cr,bb.xmin,bb.ymax)
                 end
                 Cairo.close_path(cr)
-                Cairo.set_source_rgba(cr,Dict(Pl.options)[:bgcolor].color...,1)
+                Cairo.set_source_rgba(cr,(:bgcolor in keys(Dict(Pl.options)) ?
+                                      Dict(Pl.options)[:bgcolor].color :
+                                      _DEFAULT_PLOT2D_KWARGS[:bgcolor].color)...,1)
                 Cairo.fill(cr)
             end
             Cairo.set_line_width(cr,lwcorrect(P.pen.linewidth))
@@ -199,8 +200,6 @@ function __init__()
 
     end
 
-=======
->>>>>>> 24d6ed9c3de88391cd1a88aa811ca2e42e2fa166
     Requires.@require SymPy="24249f21-da20-56a4-8eb1-6a02cf4ae2e6" begin
         function plot(S::SymPy.Sym,
                       t::Tuple{SymPy.Sym,U,V} where U<:Real where V<:Real;

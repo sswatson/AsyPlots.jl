@@ -417,7 +417,7 @@ function AsyString(P::Polygon2D)
     coords = vcat([[p.x p.y] for p in P.points]...)
     spline = P.spline ? ".." : "--"
     if P.clip
-        clipstatement = "clip($(filterjoin(pathname,fillpen,drawpen)));\n"
+        clipstatement = "clip($pathname);\n"
     else
         clipstatement = ""
     end

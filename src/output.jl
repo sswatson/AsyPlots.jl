@@ -106,7 +106,7 @@ function showplots(b::Bool)
 end
 
 Base.showable(::MIME"image/svg+xml",P::Plot2D) = true
-Base.showable(::MIME"image/svg+xml",P::Plot3D) = true
+Base.showable(::MIME"image/svg+xml",P::Plot3D) = false
 Base.showable(::MIME"image/png",P::Plot2D) = true
 
 function png()
@@ -171,7 +171,8 @@ function Base.show(io::IO, ::MIME"image/svg+xml", P::Plot3D)
     tempdir = mktempdir()
     filename = "$tempdir/myplot.svg"
     save(filename, P)
-    write(io, read("$tempdir/myplot.svg"))
+    write(io,read(filename))
+    write("/Users/sswatson/Desktop/otherstuff.svg",read(filename))
 end
 
 

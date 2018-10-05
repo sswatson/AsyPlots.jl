@@ -189,3 +189,16 @@ function string(P::Pen)
     join(filter(x->x≠"",[color,opacity,linewidth,fontsize,other]),"+")
 end
 print(io::IO,P::Pen) = print(io,string(P))
+
+function Ticks(major::Union{Vector,AbstractRange},minor::Union{Vector,AbstractRange,Nothing};beginlabel=true,endlabel=true)
+    majorticks = "Ticks=new real[] {$(join(major,","))}"
+    minorticks = isa(minor,Nothing) ? "" : "ticks=new real[] {$(join(minor,","))}"
+    bl = beginlabel ? "" : "beginlabel=false"
+    el = endlabel ? "" : "endlabel=false"
+    args = filterjoin(majorticks,minorticks,bl,el)
+    "Ticks($args)"
+end
+
+function Ticks(major::Union{Vector,AbstractRange};kwargs...)
+    Ticks(major,nothing;kwargs...)
+end

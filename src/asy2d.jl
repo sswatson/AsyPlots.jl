@@ -695,6 +695,7 @@ const _DEFAULT_PLOT2D_KWARGS =
          :ignoreaspect => false,
          :width => _DEFAULT_WIDTH,
          :bgcolor => NamedColor("white"),
+         :bgfill => true, 
          :border => 3,
          :pdf => true)
 
@@ -746,6 +747,9 @@ function AsyString(P::Plot2D)
         axesstring = ""
     end
 
+    shipout = D[:bgfill] ? "shipout(bbox(FillDraw($(D[:border]),fillpen=$(string(D[:bgcolor])),drawpen=invisible)));" : 
+        "shipout(bbox($(D[:border]),invisible));"
+
     pdf = D[:pdf] ? "settings.outformat=\"pdf\";" : ""
     ignoreaspect = D[:ignoreaspect] ? ",IgnoreAspect" : ""
     packages = join("usepackage($(enclosequote(s)));"
@@ -774,7 +778,7 @@ function AsyString(P::Plot2D)
 
     $axesstring
 
-    shipout(bbox(FillDraw($(D[:border]),fillpen=$(string(D[:bgcolor])),drawpen=invisible)));
+    $shipout 
     """,
     merged_data)
 end
@@ -846,15 +850,23 @@ function plot(xs::Vector{<:Vector{<:Real}},
     else
         ps = [[(:pen,Pen(color=c,linewidth=1.5))] for c in colors]
     end
+    if :ticks in keys(kwargs)
+        xticks = kwargs[:ticks]
+        yticks = kwargs[:ticks]
+    else
+        xticks = (:xticks in keys(kwargs)) ? kwargs[:xticks] : "Ticks(OmitTick(0))"
+        yticks = (:yticks in keys(kwargs)) ? kwargs[:yticks] : "Ticks(OmitTick(0))"
+    end
     Plot2D([Path2D(x,y;p...,pathkwargs...) for (x,y,p) in zip(xs,ys,ps)];
                    ignoreaspect=true,
                    axes=true,
-                   ticks="Ticks(OmitTick(0))",
+                   xticks=xticks, 
+                   yticks=yticks, 
                    plotkwargs...)
 end
 
 function plot(x,ys::Vector{<:Array{<:Real,1}};kwargs...)
-    plot(fill(x,length(ys)),ys;kwargs...)
+    plot(fill(collect(x),length(ys)),ys;kwargs...)
 end
 
 function plot(ys::Vector{<:Array{<:Real,1}};kwargs...)

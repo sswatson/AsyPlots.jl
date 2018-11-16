@@ -50,7 +50,7 @@ function layout(V::Vector{Plot2D};cols=isqrt(length(V)),
                                   vmargin=margin)
     U = fitsquare.(V,false)
     push!(U[end].options,(:width,
-            floor(Integer,(1+hmargin)*cols*mean(
+            floor(Integer,(1+hmargin)*cols*Statistics.mean(
                        merge(_DEFAULT_PLOT2D_KWARGS,
                              Dict(P.options))[:width] for P in U))))
     sum([Shift(mod(i-1,cols)*(1+hmargin),

@@ -480,11 +480,13 @@ struct Label2D <: GraphicElement2D
     s::AbstractString
     location::Vec2
     pen::Pen
+    rotation::Float64
 end
 
 const _DEFAULT_LABEL2D_KWARGS =
     OrderedDict(
-        :pen => Pen()
+        :pen => Pen(),
+        :rotation => 0.0
     )
 
 Label2D(s::AbstractString,v::Vec2;kwargs...) =
@@ -558,9 +560,9 @@ function AsyString(P::PixelMap)
         for(int i=0;i<m;++i){
           for(int j=0;j<n;++j){
               pixels[i][j] = (rgb(redvalues[i][j],
-                                 greenvalues[j][j],
-                                 bluevalues[i][j]) +
-                                 opacity(alphavalues[i][j]));
+                                  greenvalues[i][j],
+                                  bluevalues[i][j]) +
+                                  opacity(alphavalues[i][j]));
           }
         }
 
@@ -624,9 +626,23 @@ const _DEFAULT_HEATMAP_KWARGS =
 function heatmap(A::Array{<:Real,2};
                  colors=NamedColor.(_DEFAULT_HEATMAP_KWARGS[:colors]),
                  kwargs...)
+    heatmap(A,(0,0),size(A);colors=colors,kwargs...)
+end
+
+function heatmap(A::Array{<:Real,2},
+                 lowerleft::Tuple{Real,Real},
+                 upperright::Tuple{Real,Real};
+                 colors=NamedColor.(_DEFAULT_HEATMAP_KWARGS[:colors]),
+                 kwargs...)
     m,M = extrema(A)
     C = [cmap(colors,(A[i,j]-m)/(M-m)) for i=1:size(A,1),j=1:size(A,2)]
-    Plot(PixelMap(C,(0,0),size(A);kwargs...))
+    if :alpha in keys(kwargs)
+        alpha = kwargs[:alpha] 
+        kwargs = [(a,b) for (a,b) in kwargs if a ≠ :alpha]
+        PixelMap(C,alpha,lowerleft,upperright;kwargs...)
+    else
+        PixelMap(C,lowerleft,upperright;kwargs...)
+    end
 end
 
 function cmap(colors::Array{NamedColor,1},r::Real)
@@ -694,6 +710,7 @@ const _DEFAULT_PLOT2D_KWARGS =
          :ticks => "NoTicks",
          :ignoreaspect => false,
          :width => _DEFAULT_WIDTH,
+         :height => "", 
          :bgcolor => NamedColor("white"),
          :bgfill => true, 
          :border => 3,
@@ -751,7 +768,7 @@ function AsyString(P::Plot2D)
         "shipout(bbox($(D[:border]),invisible));"
 
     pdf = D[:pdf] ? "settings.outformat=\"pdf\";" : ""
-    ignoreaspect = D[:ignoreaspect] ? ",IgnoreAspect" : ""
+    ignoreaspect = D[:ignoreaspect] ? "IgnoreAspect" : ""
     packages = join("usepackage($(enclosequote(s)));"
                                     for s in D[:packages])
 
@@ -772,7 +789,7 @@ function AsyString(P::Plot2D)
 
     $packages
 
-    size($(D[:width])$ignoreaspect);
+    size($(filterjoin(D[:width],D[:height],ignoreaspect)));
 
     $drawingcommands
 

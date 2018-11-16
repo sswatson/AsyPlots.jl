@@ -3,7 +3,7 @@
 """
     histogram(data::Vector;
               bincount=30,
-              bins=linspace(minimum(data),maximum(data),bincount),
+              bins=range(minimum(data),stop=maximum(data),length=bincount),
               xlabel="",
               ylabel="",
               title="",
@@ -13,7 +13,7 @@ Make a histogram of `data`
 """
 function histogram(data::Vector;
                    bincount=30,
-                   bins=linspace(minimum(data),maximum(data),bincount),
+                   bins=range(minimum(data),stop=maximum(data),length=bincount),
                    xlabel="",
                    ylabel="",
                    title="",

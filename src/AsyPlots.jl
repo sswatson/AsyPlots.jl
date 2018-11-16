@@ -8,12 +8,16 @@ import ColorTypes,
        ProgressMeter,
        Contour,
        Interpolations,
-       DelimitedFiles
+       DelimitedFiles,
+       Statistics
 
 import DataStructures: OrderedDict
 
-import Base: show, print, string, convert, complex, abs, iterate, 
-             +, *, -, ==
+import Base: show, print, string, convert,
+             complex, abs, iterate, zero, 
+             +, *, -, /, ==
+
+import LinearAlgebra: dot
 
 export Point, Point2D, Point3D,
        Path, Path2D, Path3D,

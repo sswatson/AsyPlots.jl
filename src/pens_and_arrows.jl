@@ -33,10 +33,13 @@ NamedColor(r::Real,g::Real,b::Real) = NamedColor((r,g,b))
 function *(k::Real,C::NamedColor)
     NamedColor("",ColorTypes.RGB(k*C.color.r,k*C.color.g,k*C.color.b))
 end
+dot(k::Real,C::NamedColor) = k*C
+zero(::Type{NamedColor}) = NamedColor(0,0,0)
+/(C::NamedColor,r::Real) = 1/r*C
 function +(C::NamedColor,D::NamedColor)
     NamedColor("",ColorTypes.RGB(C.color.r + D.color.r,
-                               C.color.g + D.color.g,
-                               C.color.b + D.color.b))
+                                 C.color.g + D.color.g,
+                                 C.color.b + D.color.b))
 end
 
 function ==(C::NamedColor,D::NamedColor)

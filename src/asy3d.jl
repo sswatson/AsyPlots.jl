@@ -169,7 +169,7 @@ struct Surface <: GraphicElement3D
     x::Array{<:Real,2}
     y::Array{<:Real,2}
     z::Array{<:Real,2}
-    colors::Vector
+    colors::Union{Vector,Array{Pen,2}}
     spline::Bool
     surfacepen::Pen
     meshpen::Pen
@@ -208,6 +208,10 @@ function Surface(x::Union{Array{<:Real,1},AbstractRange},
 end
 
 function AsyString(S::Surface)
+    r(P::Pen) = Float64(P.color.color.r)
+    g(P::Pen) = Float64(P.color.color.g)
+    b(P::Pen) = Float64(P.color.color.b)
+    o(P::Pen) = Float64(P.opacity)
     asyData = Dict()
     for w in (:x,:y,:z)
         asyData[string(w)*"{IDENTIFIER}.csv"] = getfield(S,w)
@@ -217,13 +221,66 @@ function AsyString(S::Surface)
     surfacepen = isdefault(D[:surfacepen]) ? "" : "surfacepen=$(D[:surfacepen])"
     meshpen = isdefault(D[:meshpen]) ? "" : "meshpen=$(D[:meshpen])"
 
-    surfacepenloop = """
-    for(int i=0; i < p.length; ++i){
-        p += $(D[:surfacepen]);
-    }
+    surfacepenmod = """
+    p[i] += $(D[:surfacepen]);
     """
     if isdefault(D[:surfacepen])
-        surfacepenloop = ""
+        surfacepenmod = ""
+    end
+
+    safepaste(s) = length(s) > 1000 ? error("Misspecified colors") : s
+
+    if isa(D[:colors],Array{Pen,2})
+        merge!(asyData,Dict(
+            "red{IDENTIFIER}.csv"=>r.(D[:colors]),
+            "green{IDENTIFIER}.csv"=>g.(D[:colors]),
+            "blue{IDENTIFIER}.csv"=>b.(D[:colors]),
+            "alpha{IDENTIFIER}.csv"=>o.(D[:colors])))
+        colorasy = """
+        int m = $(size(D[:colors],1));
+        int n = $(size(D[:colors],2));
+        file reds = input("red{IDENTIFIER}.csv");
+        real[][] redvalues = reds.csv().dimension(m,n);
+        close(reds);
+        file blues = input("blue{IDENTIFIER}.csv");
+        real[][] bluevalues = blues.csv().dimension(m,n);
+        close(reds);
+        file greens = input("green{IDENTIFIER}.csv");
+        real[][] greenvalues = greens.csv().dimension(m,n);
+        close(reds);
+        file alphas = input("alpha{IDENTIFIER}.csv");
+        real[][] alphavalues = alphas.csv().dimension(m,n);
+        close(alphas);
+
+        pen[][] pixels = new pen[m][n];
+        for(int i=0;i<m;++i){
+          for(int j=0;j<n;++j){
+              pixels[i][j] = (rgb(redvalues[i][j],
+                                  greenvalues[i][j],
+                                  bluevalues[i][j]) +
+                                  opacity(alphavalues[i][j]));
+          }
+        }
+
+        pen[][] patchpens = new pen[(m-1)*(n-1)][4];
+
+        for(int i=0; i<m-1; ++i){
+          for(int j=0; j<n-1; ++j){
+            patchpens[(n-1)*i+j][0] = pixels[i][j];
+            patchpens[(n-1)*i+j][1] = pixels[i+1][j];
+            patchpens[(n-1)*i+j][2] = pixels[i+1][j+1];
+            patchpens[(n-1)*i+j][3] = pixels[i][j+1];
+          }
+        }
+
+        s.colors(patchpens);
+
+        """
+    else
+        colorasy = """
+        pen[] p = {$(safepaste((join(D[:colors],','))))};
+        s.colors(palette(s.map(zpart),Gradient(100 ... p)));
+        """
     end
 
     if D[:clip] ≠ false
@@ -278,13 +335,10 @@ function AsyString(S::Surface)
 
     $clipfunction
 
-    pen[] p = {$(join(D[:colors],','))};
-
-    $surfacepenloop
-
     surface s = surface(f,(0,0),(m-1,n-1),
                             nu=m-1,nv=n-1$spline$cliparg);
-    s.colors(palette(s.map(zpart),Gradient(100 ... p)));
+
+    $colorasy
 
     draw($(filterjoin("s",surfacepen,meshpen,
                 "render(merge=true)","light=nolight")));""",
@@ -396,7 +450,7 @@ const _DEFAULT_LABEL3D_KWARGS =
     )
 
 Label3D(s::AbstractString,v::Vec3;kwargs...) =
-    Label3D(s,v,updatedvals(_DEFAULT_LABEL2D_KWARGS,
+    Label3D(s,v,updatedvals(_DEFAULT_LABEL3D_KWARGS,
                                 process_pen_kwargs(kwargs))...)
 Label(s::AbstractString,v::Vec3;kwargs...) = Label3D(s,v;kwargs...)
 Label3D(s::AbstractString,
@@ -410,7 +464,8 @@ Label(s::AbstractString,x::Real,y::Real,z::Real;kwargs...) = Label3D(s,x,y;kwarg
 
 function AsyString(L::Union{Label2D,Label3D})
     pen = isdefault(L.pen) ? "" : ",p=$(string(L.pen))"
-    AsyString("label($(enclosequote(L.s)),$(string(L.location))$pen);")
+    rotation = (isa(L,Label3D) || L.rotation == 0.0) ? "" : "rotate($(L.rotation))*"
+    AsyString("label($rotation$(enclosequote(L.s)),$(string(L.location))$pen);")
 end
 
 function Base.show(io::IO,L::Label3D)
@@ -487,6 +542,7 @@ const _DEFAULT_PLOT3D_KWARGS =
          :arrow => Arrow3(),
          :camera => nothing,
          :projection => "perspective",
+         :bgcolor => NamedColor("white"),
          :width => _DEFAULT_WIDTH,
          :ignoreaspect => false)
 
@@ -503,6 +559,9 @@ function AsyString(P::Plot3D)
         if isa(D[s],Real)
             D[s] = string(D[s])
         end
+    end
+    if isa(D[:bgcolor],AbstractString)
+        D[:bgcolor] = NamedColor(D[:bgcolor])
     end
     if D[:axes]
         axesstring = """
@@ -532,6 +591,8 @@ function AsyString(P::Plot3D)
         currentprojection = "$(D[:projection])($a,$b,$c);"
     end
 
+    bgcolor = "currentlight.background = $(string(D[:bgcolor]));"
+
     ignoreaspect = D[:ignoreaspect] ? ",IgnoreAspect" : ""
     pdfstring = """
     settings.outformat = "pdf";
@@ -560,6 +621,8 @@ function AsyString(P::Plot3D)
     $pdf
 
     size3($(D[:width])$ignoreaspect);
+
+    $bgcolor
 
     $drawingcommands
 
@@ -605,8 +668,8 @@ function plot(f::Function,
               m::Integer=100,
               n::Integer=100,
               kwargs...)
-    x = linspace(a,b,m)
-    y = linspace(c,d,n)
+    x = range(a,stop=b,length=m)
+    y = range(c,stop=d,length=n)
     plot(x,y,[f(p,q) for p=x,q=y];kwargs...)
 end
 

@@ -244,10 +244,10 @@ function AsyString(S::Surface)
         close(reds);
         file blues = input("blue{IDENTIFIER}.csv");
         real[][] bluevalues = blues.csv().dimension(m,n);
-        close(reds);
+        close(blues);
         file greens = input("green{IDENTIFIER}.csv");
         real[][] greenvalues = greens.csv().dimension(m,n);
-        close(reds);
+        close(greens);
         file alphas = input("alpha{IDENTIFIER}.csv");
         real[][] alphavalues = alphas.csv().dimension(m,n);
         close(alphas);
@@ -264,12 +264,14 @@ function AsyString(S::Surface)
 
         pen[][] patchpens = new pen[(m-1)*(n-1)][4];
 
+        int splineoffset = $(D[:spline] ? 1 : 0); 
+
         for(int i=0; i<m-1; ++i){
           for(int j=0; j<n-1; ++j){
             patchpens[(n-1)*i+j][0] = pixels[i][j];
-            patchpens[(n-1)*i+j][1] = pixels[i+1][j];
-            patchpens[(n-1)*i+j][2] = pixels[i+1][j+1];
-            patchpens[(n-1)*i+j][3] = pixels[i][j+1];
+            patchpens[(n-1)*i+j][1] = pixels[i+splineoffset][j];
+            patchpens[(n-1)*i+j][2] = pixels[i+splineoffset][j+splineoffset];
+            patchpens[(n-1)*i+j][3] = pixels[i][j+splineoffset];
           }
         }
 
@@ -277,8 +279,17 @@ function AsyString(S::Surface)
 
         """
     else
+        surfacepenmodloop = surfacepenmod == "" ? "" :
+            """
+            for(int i=0; i<p.length-1; ++i) {
+                p[i] += $surfacepenmod; 
+            }
+            """
         colorasy = """
         pen[] p = {$(safepaste((join(D[:colors],','))))};
+
+        $surfacepenmodloop
+    
         s.colors(palette(s.map(zpart),Gradient(100 ... p)));
         """
     end
@@ -494,6 +505,10 @@ struct Plot3D <: Plot
     options::Array{Any,1}
 end
 
++(G::GraphicElement, H::GraphicElement) = Plot([G,H])
++(P::Plot,G::GraphicElement) = P + Plot(G)
++(G::GraphicElement,P) = P + G
+
 Plot3D() = Plot3D(GraphicElement[],[])
 
 function Plot3D(elements::Array{<:GraphicElement};kwargs...)
@@ -504,7 +519,7 @@ Plot3D(element::GraphicElement;kwargs...) = Plot3D([element];kwargs...)
 
 function Plot(elements...;kwargs...)
     if length(elements) == 0
-        error("No arguments supplied to Plot")
+        Plot(GraphicElement[])
     end
     e = elements[1]
     if length(elements) > 1 || isa(e,GraphicElement)
@@ -541,6 +556,7 @@ const _DEFAULT_PLOT3D_KWARGS =
          :zticks => "NoTicks3",
          :arrow => Arrow3(),
          :camera => nothing,
+         :up => nothing, 
          :projection => "perspective",
          :bgcolor => NamedColor("white"),
          :width => _DEFAULT_WIDTH,
@@ -584,11 +600,15 @@ function AsyString(P::Plot3D)
     else
         axesstring = ""
     end
-
-    currentprojection = "$(D[:projection])(M.x+(M.x-m.x),M.y+0.25*(M.y-m.y),M.z+0.5*(M.z-m.z));"
-    if D[:camera] != nothing
+    
+    if occursin("(",D[:projection])
+        currentprojection = D[:projection]
+    elseif D[:camera] != nothing
         a,b,c = D[:camera]
-        currentprojection = "$(D[:projection])($a,$b,$c);"
+        up = isa(D[:up],Nothing) ? "" : "up=$(D[:up])"
+        currentprojection = "$(D[:projection])($(filterjoin(a,b,c,up)));"
+    else
+        currentprojection = "$(D[:projection])(M.x+(M.x-m.x),M.y+0.25*(M.y-m.y),M.z+0.5*(M.z-m.z));"
     end
 
     bgcolor = "currentlight.background = $(string(D[:bgcolor]));"

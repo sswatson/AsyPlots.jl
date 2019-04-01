@@ -93,7 +93,7 @@ function iswellinside(V::Vec2,
 end
 
 # Path concatenation
-function +(p::Union{Path3D,Path2D},q::Union{Path3D,Path2D})
+function *(p::Union{Path3D,Path2D},q::Union{Path3D,Path2D})
     P = typeof(p)
     P ≠ typeof(q) && error("Can't mix 2D and 3D paths")
     k = endof(p.points) - (p.points[end] == q.points[1] ? 1 : 0)

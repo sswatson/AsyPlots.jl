@@ -30,6 +30,11 @@ end
 
 NamedColor(r::Real,g::Real,b::Real) = NamedColor((r,g,b))
 
+softblue = NamedColor(0.92,0.95,0.99);
+softred = NamedColor(0.99, 0.92, 0.91);
+softyellow = NamedColor(0.98, 0.98, 0.9);
+softgreen = NamedColor(0.96, 0.995, 0.98);
+
 function *(k::Real,C::NamedColor)
     NamedColor("",ColorTypes.RGB(k*C.color.r,k*C.color.g,k*C.color.b))
 end

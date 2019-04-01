@@ -19,28 +19,44 @@ plots = [Plot(Path(X[1:t],Y[1:t])) for t=10:10:10000]
 animate(plots)
 ```
 """
+
 function animate(filename::AbstractString,
                  plots::Vector{Plot2D};
-                 rate=10)
+                 rate=6,
+                 density=400,
+                 quality=100,
+                 loop=1, 
+                 format=:gif)
     bb = boundingbox(map(boundingbox,plots))
     e = ceil(Integer,log10(length(plots)))+1
     N = 10^e
     tempdir = mktempdir()
+    framenames = []
     ProgressMeter.@showprogress for (i,P) in enumerate(plots)
-        framename = "$tempdir/frame$(string(N+i-1)[2:end]).png"
+        ext = format == :gif ? "pdf" : "png"
+        framename = "$tempdir/frame$(string(N+i-1)[2:end]).$ext"
+        push!(framenames,framename)
         save(framename,P,bbox=bb)
     end
-    run(`ffmpeg -r $rate -i $tempdir/frame%0$(e)d.png -pix_fmt yuv420p $tempdir/mymovie.mp4`)
+    if format == :mp4
+        clipname = "mymovie.mp4"
+        run(`ffmpeg -r $rate -i $tempdir/frame%0$(e)d.png -pix_fmt yuv420p $tempdir/$clipname`)
+    elseif format == :gif
+        clipname = "myanimated.gif"
+        run(`convert -delay $rate -density $density -quality $quality -loop $loop $framenames $tempdir/$clipname`)
+    else
+        error("available formats are :mp4 and :gif")
+    end
     if filename ≠ ""
-        cp("$tempdir/mymovie.mp4",filename;force=true)
+        cp("$tempdir/$clipname",filename;force=true)
     else
         try
             if Sys.isapple()
-                run(`open $tempdir/mymovie.mp4`)
+                run(`open $tempdir/$clipname`)
             elseif Sys.islinux() || Sys.isbsd()
-                run(`xdg-open $tempdir/mymovie.mp4`)
+                run(`xdg-open $tempdir/$clipname`)
             elseif Sys.iswindows()
-                run(`start $tempdir/mymovie.mp4`)
+                run(`start $tempdir/$clipname`)
             end
         catch e
             error(string(

@@ -34,6 +34,28 @@ Scale(x) = Scale(x,x)
 
 *(S::Transform,P::Plot2D) = Plot2D([S*e for e in P.elements],P.options)
 
+struct TransformComposition <: Transform
+    transforms::Vector{<:Transform}
+end
+
+*(S::TransformComposition, T::TransformComposition) =
+    TransformComposition([S.transforms;T.transforms])
+
+*(S::Transform,T::TransformComposition) =
+    TransformComposition([S;T.transforms])
+
+*(S::TransformComposition, T::Transform) =
+    TransformComposition([S.transforms;T])
+
+*(S::Transform,T::Transform) = TransformComposition([S,T])
+
+*(T::TransformComposition, P::Plot2D) =
+    foldr(*,[T.transforms;P])
+
+*(T::TransformComposition, P::GraphicElement2D) =
+    foldr(*,[T.transforms;P])
+
+
 function fitsquare(P::Plot2D,ignoreaspect)
     bbox = AsyPlots.boundingbox(P)
     w,h = bbox.xmax-bbox.xmin, bbox.ymax-bbox.ymin

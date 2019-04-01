@@ -41,7 +41,7 @@ export Point, Point2D, Point3D,
        junosvg, junopng, junodefault, 
        fitwidth, fitheight,
        animate,
-       piechart, histogram 
+       piechart, histogram
 
 abstract type Plot end
 abstract type GraphicElement end

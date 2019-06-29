@@ -59,15 +59,15 @@ function __init__()
                 Cairo.line_to(cr,P.points[i].x,P.points[i].y);
             end
             Cairo.close_path(cr)
-            if ~is_no_pen(P.fillpen)
+            if !is_no_pen(P.fillpen)
                 Cairo.set_source_rgba(cr,P.fillpen.color...,P.fillpen.opacity)
-                if ~is_no_pen(P.pen)
+                if !is_no_pen(P.pen)
                     Cairo.fill_preserve(cr)
                 else
                     Cairo.fill(cr)
                 end
             end
-            if ~is_no_pen(P.pen)
+            if !is_no_pen(P.pen)
                 Cairo.set_source_rgba(cr,P.pen.color...,P.pen.opacity)
                 Cairo.stroke(cr)
             end
@@ -157,7 +157,7 @@ function __init__()
             width = :width in keys(D) ? D[:width] : _DEFAULT_WIDTH
             border_fraction = 3*border/width
             bb = boundingbox(P,border=border_fraction)
-            if ~(bbox == false)
+            if !(bbox == false)
                 bb = boundingbox([bb,bbox])
             end
             asp_ratio = aspectratio(bb)

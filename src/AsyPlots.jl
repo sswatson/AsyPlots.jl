@@ -85,7 +85,7 @@ end
 
 _HAVE_ASY = try success(`asy -version`); catch; false; end
 
-if ~_HAVE_ASY
+if !_HAVE_ASY
     println("asy not found, using Cairo backend")
     cairo()
 end

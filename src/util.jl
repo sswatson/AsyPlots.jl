@@ -27,7 +27,7 @@ end
 function updatedvals(defOptions::OrderedDict,newOptions)
     newOptionsDict = Dict(newOptions)
     for (k,v) in newOptionsDict
-        if ~(k in keys(defOptions))
+        if !(k in keys(defOptions))
             error("Unknown option $k")
         end
     end

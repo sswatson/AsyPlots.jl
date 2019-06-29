@@ -29,17 +29,33 @@ This package provides access to
 
 *AsyPlots* requires Asymptote, which you might already have as a part
 of your TeX installation (run `asy --version` from the command line to
-check). 
+check). Alternatively, you can download and install it [here](https://sourceforge.net/projects/asymptote/files/2.44/). Version 2.44 is recommended. Linux and Windows binaries are available, and to install on macOS, download [asymptote-2.44.src.tgz](https://sourceforge.net/projects/asymptote/files/2.44/asymptote-2.44.src.tgz/download), unzip it, `cd` into that directory, and run
+
+```
+wget http://hboehm.info/gc/gc_source/gc-7.6.0.tar.gz
+wget http://www.ivmaisoft.com/_bin/atomic_ops/libatomic_ops-7.6.0.tar.gz
+./configure
+make all
+sudo make install
+```
 
 Asymptote can optionally use an alternative backend that relies on `Cairo.jl`, though
 this package is currently not installing cleanly. 
 Try 
 ```julia
 using Homebrew
-Homebrew.brew(`reinstall fontconfig`)
+Homebrew.brew(`unlink glib`)
+Homebrew.brew(`install --verbose --build-from-source https://raw.githubusercontent.com/Homebrew/homebrew-core/05871cb0394f78ef25a5c1c071456d0f1e4be4fe/Formula/glib.rb`)
 Pkg.build("Cairo")
 ```
 See [this thread](https://github.com/JuliaGraphics/Cairo.jl/issues/230) for more details. 
+
+If you want to use the Cairo features of Asymptote, you should load Cairo first:
+
+```julia
+using Cairo
+using AsyPlots
+```
 
 ## Examples
 

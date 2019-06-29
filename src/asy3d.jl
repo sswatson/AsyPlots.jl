@@ -295,7 +295,7 @@ function AsyString(S::Surface)
     end
 
     if D[:clip] ≠ false
-        if (~isa(D[:clip],AbstractArray{<:Any,2})
+        if (!isa(D[:clip],AbstractArray{<:Any,2})
             || size(D[:clip]) ≠ size(S.z))
             error("clip misspecified")
         end
@@ -566,7 +566,7 @@ function AsyString(P::Plot3D)
     global _DEFAULT_PLOT3D_KWARGS
     D = copy(_DEFAULT_PLOT3D_KWARGS)
     for k in keys(Dict(P.options))
-        if ~(k in keys(D))
+        if !(k in keys(D))
             error("Unknown Plot3D option $k")
         end
     end

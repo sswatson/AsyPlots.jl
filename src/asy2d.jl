@@ -720,7 +720,7 @@ function AsyString(P::Plot2D)
     global _DEFAULT_PLOT2D_KWARGS
     D = deepcopy(_DEFAULT_PLOT2D_KWARGS)
     for k in keys(Dict(P.options))
-        if ~(k in keys(D))
+        if !(k in keys(D))
             error("Unknown Plot2D option $k")
         end
     end

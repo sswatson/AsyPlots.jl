@@ -1,7 +1,7 @@
 
 function check_asy_present()
     global _HAVE_ASY
-    if ~_HAVE_ASY
+    if !_HAVE_ASY
         error("3D Output not available with Cairo backend")
     end
 end
@@ -27,7 +27,7 @@ function save(filename::AbstractString,
               forcepdf=false,
               bbox=false)
     global _BACKEND
-    if ~any(endswith(filename,ext) for ext in (".asy",".pdf",".svg",".png"))
+    if !any(endswith(filename,ext) for ext in (".asy",".pdf",".svg",".png"))
         error("Extension should be asy, pdf, svg, or png")
     end
     if _BACKEND == "asy"
@@ -40,7 +40,7 @@ function save(filename::AbstractString,
             else
                 Q = P
             end
-            if ~(bbox == false)
+            if bbox ≠ false
                 Q += Plot(box(bbox.xmin,bb.max,bb.ymin,bb.ymax;other=invisible))
             end
             S = AsyString(Q)
@@ -163,7 +163,7 @@ function Base.show(io::IO, ::MIME"image/svg+xml", P::Plot3D)
         return
     end
     global _HAVE_ASY
-    if ~_HAVE_ASY
+    if !_HAVE_ASY
         l = length(P.elements)
         show(io,"""Plot3D(<$(l)element$(l == 1 ? "" : "s")>)""")
         return
@@ -181,7 +181,7 @@ function Base.show(io::IO, ::MIME"image/png", P::Plot3D)
         return nothing
     end
     global _HAVE_ASY
-    if ~_HAVE_ASY
+    if !_HAVE_ASY
         l = length(P.elements)
         show(io,"""Plot3D(<$(l)element$(l == 1 ? "" : "s")>)""")
         return

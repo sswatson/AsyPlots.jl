@@ -19,6 +19,7 @@ NamedColor(;name="",color=ColorTypes.RGB(0,0,0)) =
                                 NamedColor(name,color)
 
 NamedColor(S::String) = NamedColor(name=S,color=parse(Colors.Colorant,S))
+NamedColor(S::Symbol) = NamedColor(string(S))
 NamedColor(C::ColorTypes.RGB) = NamedColor(color=C)
 function NamedColor(S::String,C::Tuple{<:Real,<:Real,<:Real})
     NamedColor(S,ColorTypes.RGB(C...))

@@ -23,6 +23,22 @@ convert(::Type{Vector},V::Vec2) = [V.x,V.y]
 import LinearAlgebra.×
 ×(V::Vec2,W::Vec2) = V.x*W.y - W.x*V.y
 
+struct PointShape
+    name::Symbol
+    size::Float64
+end
+
+const _DEFAULT_POINTSHAPE_KWARGS =
+    OrderedDict(
+        :name => :dot, 
+        :size => 0.025
+    )
+
+PointShape(name;kw...) = PointShape(name=name,kw...)
+PointShape(;kw...) = PointShape(updatedvals(_DEFAULT_POINTSHAPE_KWARGS,kw)...)
+
+convert(::Type{PointShape},s::Symbol) = PointShape(name=s)
+
 """
     Point2D(x::Real,y::Real; label="",pen=Pen())
     Point2D(P; label="",pen=Pen())
@@ -41,6 +57,7 @@ struct Point2D <: GraphicElement2D
     P::Vec2
     label::AbstractString
     pen::Pen
+    shape::PointShape
 end
 
 """
@@ -52,7 +69,7 @@ Return a Point2D or Point3D object, as appropriate
 
 # Examples
 ```julia-repl
-julia> Point(1,2;pen=Pen(opacity=0.5))
+julia> Point(1,2;pen=Pen(opacity=0.5),shape=:plus)
 Point2D(1,2;pen=opacity(0.5))
 ```
 """
@@ -61,7 +78,8 @@ function Point end
 const _DEFAULT_POINT2D_KWARGS =
     OrderedDict(
         :label => "",
-        :pen => Pen()
+        :pen => Pen(),
+        :shape => PointShape()
     )
 
 Point2D(v::Vec2;kwargs...) =
@@ -76,17 +94,104 @@ Point(x::Real,y::Real;kwargs...) = Point2D(x,y;kwargs...)
 Point2D(z::Union{Real,Complex};kwargs...) = Point2D(reim(z)...;kwargs...)
 Point(z::Union{Real,Complex};kwargs...) = Point2D(z;kwargs...)
 
+function point_drawcommand(x::String,y::String,p::Pen,shape::PointShape,lbl::AbstractString)
+    label = lbl == "" ? "" : "L=$(enclosequote(lbl)),"
+    pen = isdefault(p) ? "" : ",p=$(string(p))"
+    if shape.name == :dot
+        "dot($label($x,$y)$pen);"
+    elseif shape.name == :cross
+        ϵ = shape.size / √(2)
+        """
+        draw($label($x,$y) + (-$ϵ,-$ϵ) -- ($x,$y) + ($ϵ,$ϵ)$pen);
+        draw(($x,$y) + ($ϵ,-$ϵ) -- ($x,$y) + (-$ϵ,$ϵ)$pen);
+        """
+    elseif shape.name == :plus
+        ϵ = shape.size
+        """
+        draw($label($x,$y) + (-$ϵ,0) -- ($x,$y) + ($ϵ,0)$pen);
+        draw(($x,$y) + (0,-$ϵ) -- ($x,$y) + (0,$ϵ)$pen);
+        """
+    elseif shape.name == :circle
+        ϵ = shape.size
+        "draw($(label)circle(($x,$y), $ϵ$pen);"
+    end
+end
+point_drawcommand(x::Real,y::Real,p::Pen,shape::PointShape,lbl::AbstractString) = point_drawcommand(string(x),string(y),p,shape,lbl)
+
+
 function AsyString(P::Point2D)
-    label = P.label == "" ? "" : "L=$(enclosequote(P.label)),"
-    pen = isdefault(P.pen) ? "" : ",p=$(string(P.pen))"
-    AsyString("""
-    dot($label$(string(P.P))$pen);
-    """)
+    AsyString(point_drawcommand(P.P.x,P.P.y,P.pen,P.shape,P.label))
 end
 
 function Base.show(io::IO,P::Point2D)
     kwargs = kwargstring(P,_DEFAULT_POINT2D_KWARGS)
     print(io,"Point2D($(P.P.x),$(P.P.y)$kwargs)")
+end
+
+function PointCloud end
+
+struct PointCloud2D <: GraphicElement2D
+    points::Array{<:Vec2,1}
+    pen::Pen
+    shape::PointShape
+end
+
+const _DEFAULT_POINTCLOUD2D_KWARGS =
+    OrderedDict(
+        :pen => Pen(),
+        :shape => PointShape()
+    )
+
+PointCloud2D(points::Array{<:Vec2,1};kwargs...) =
+        PointCloud2D(points,updatedvals(_DEFAULT_POINTCLOUD2D_KWARGS,
+                                process_pen_kwargs(kwargs))...)
+
+PointCloud(points::Array{<:Vec2,1};kwargs...) = PointCloud2D(points;kwargs...)
+
+PointCloud2D(points::Array{<:Tuple{<:Real,<:Real},1};kwargs...) =
+                                PointCloud2D(map(Vec2,points);kwargs...)
+
+PointCloud(points::Array{<:Tuple{<:Real,<:Real},1};kwargs...) =
+                                    PointCloud2D(map(Vec2,points);kwargs...)
+
+PointCloud2D(coords::Array{<:Real,2};kwargs...) =
+            PointCloud2D([Vec2(coords[i,:]...) for i=1:size(coords,1)];kwargs...)
+
+PointCloud2D(points::Array{<:RealOrComplex,1};kwargs...) =
+                        PointCloud2D(map(Vec2,points);kwargs...)
+
+PointCloud2D(x,y;kwargs...) = PointCloud2D(collect(zip(x,y));kwargs...)
+
+PointCloud(points::Array{<:RealOrComplex,1};kwargs...) =
+                                PointCloud2D(map(Vec2,points);kwargs...)
+
+PointCloud(x,y;kwargs...) = PointCloud2D(x,y;kwargs...)
+
+function PointCloud(coords::Array{<:Real,2};kwargs...)
+    if size(coords,2) == 2
+        PointCloud2D(coords;kwargs...)
+    else
+        PointCloud3D(coords;kwargs...)
+    end
+end
+
+const _DEFAULT_POINTCLOUD_KWARGS =
+    OrderedDict(
+        :pen => Pen(),
+        :shape => PointShape()
+    )
+
+function AsyString(P::PointCloud2D)
+    coords = vcat([[p.x p.y] for p in P.points]...)
+    AsyString("""
+    file pathdata = input("pointcloud{IDENTIFIER}.csv");
+    real[][] A = pathdata.csv().dimension(0,2);
+    close(pathdata);
+    for(int i=0; i<A.length; ++i){
+        $(point_drawcommand("A[i][0]","A[i][1]",P.pen,P.shape,""))
+    }
+    """,
+    Dict("pointcloud{IDENTIFIER}.csv"=>coords))
 end
 
 #--- 2D PATHS -----------------------------------------

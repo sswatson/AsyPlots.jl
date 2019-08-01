@@ -56,7 +56,7 @@ function save(filename::AbstractString,
                 originaldir = pwd()
                 try
                     cd(directory)
-                    run(`asy $(basename(filename))`)
+                    run(`asy -nosafe $(basename(filename))`)
                 finally
                     cd(originaldir)
                 end

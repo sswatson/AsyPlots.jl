@@ -19,7 +19,7 @@ import Base: show, print, string, convert,
 
 import LinearAlgebra: dot
 
-export Point, Point2D, Point3D,
+export Point, Point2D, Point3D, PointShape, PointCloud,
        Path, Path2D, Path3D,
        Circle2D, Circle,
        Polygon2D, Polygon3D, Polygon, box,

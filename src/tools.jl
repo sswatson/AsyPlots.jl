@@ -1,5 +1,5 @@
 """
-    isinside(p::Point,pointlist::AbstractArray{Point,1})
+    isinside(p::Point,pointlist::AbstractArray{<:Point,1})
 
 Determine whether `p` is inside `pointlist`.
 
@@ -7,7 +7,7 @@ This function was copied from Luxor.jl. It is an
 implementation of an algorithm due to Hormann and Agathos (2001)
 """
 function isinside(p::Vec2,
-                  pointlist::AbstractArray{Vec2, 1};
+                  pointlist::AbstractArray{<:Vec2, 1};
                   allowonedge::Bool=false)
     c = false
     @inbounds for counter in 1:length(pointlist)
@@ -82,12 +82,12 @@ function distance(P::Vec2,A::Vec2,B::Vec2)
     return distance(P.x,P.y,A.x,A.y,B.x,B.y)
 end
 
-function distance(V::Vec2,path::Array{Vec2,1})
+function distance(V::Vec2,path::Array{<:Vec2,1})
     minimum(distance(V,path[k],path[k+1]) for k=1:length(path)-1)
 end
 
 function iswellinside(V::Vec2,
-                      pointlist::AbstractArray{Vec2, 1};
+                      pointlist::AbstractArray{<:Vec2, 1};
                       epsilon=1e-3);
     return distance(V,pointlist) > epsilon && isinside(V,pointlist)
 end

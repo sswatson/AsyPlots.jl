@@ -26,8 +26,8 @@ const _DEFAULT_ISOLINE_KWARGS =
 """
     isolines(xs, ys, zs; lift = false, interpolation = :cubic)    
     
-    Plot the contour lines of the function whose values are represented
-    by the array (or function) `zs`. If `lift` is true, plot in 3D.
+Plot the contour lines of the function whose values are represented
+by the array (or function) `zs`. If `lift` is true, plot in 3D.
     
 # Examples
 ```julia-repl

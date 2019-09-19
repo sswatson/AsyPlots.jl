@@ -2,7 +2,8 @@ __precompile__(true)
 
 module AsyPlots
 
-import ColorTypes,
+import Random,
+       ColorTypes,
        Colors,
        Requires,
        ProgressMeter,

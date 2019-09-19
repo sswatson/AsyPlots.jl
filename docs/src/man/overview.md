@@ -57,7 +57,7 @@ A convenience function `plot` is available for graphing arrays without having to
 
 ```@example
 using AsyPlots # hide
-srand(3) # hide
+using Random; Random.seed!(3) # hide
 y = cumsum(cumsum(randn(1000)))
 plot(y,pen=Pen(color="DarkRed"),axisarrow=Arrow())
 save("red_random_walk.svg",ans) # hide
@@ -69,7 +69,7 @@ nothing # hide
 ```@example
 using AsyPlots # hide
 using LaTeXStrings
-srand(1) # hide
+using Random; Random.seed!(1) # hide
 z = randn(5,5)
 plot(z,xmax=4.5,ymax=4.5,xlabel=L"$x$",ylabel=L"$y$",width=250)
 save("surfplot.svg",ans) # hide

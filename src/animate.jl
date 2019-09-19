@@ -19,7 +19,6 @@ plots = [Plot(Path(X[1:t],Y[1:t])) for t=10:10:10000]
 animate(plots)
 ```
 """
-
 function animate(filename::AbstractString,
                  plots::Vector{Plot2D};
                  rate=6,

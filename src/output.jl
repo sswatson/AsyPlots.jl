@@ -98,6 +98,12 @@ end
 
 save(S::GraphicElement;kwargs...) = save(Plot([S],kwargs))
 
+function save(P::Union{Plot2D,Plot3D},
+              filename::AbstractString; kwargs...)
+    @warn "file name should be the first argument to save"
+    save(filename, P; kwargs...)
+end
+
 _SHOW_PLOTS = true
 function showplots(b::Bool)
     global _SHOW_PLOTS

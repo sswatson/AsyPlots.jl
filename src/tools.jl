@@ -31,7 +31,7 @@ function isinside(p::Vec2,
                 continue
             end
         end
-        if (q1.y < p.y) != (q2.y < p.y) # crossing
+        if (q1.y < p.y) ≠ (q2.y < p.y) # crossing
             if q1.x >= p.x
                 if q2.x > p.x
                     c = !c

@@ -61,7 +61,7 @@ using AsyPlots
 
 ```julia
 using AsyPlots
-n = 250; srand(1)
+n = 250; using Random; Random.seed!(1)
 A = [(x,y) == (0,0) ? 0 : 1/(x^2+y^2) for x=0:n-1,y=0:n-1]
 B = randn(n,n)
 save("fgf.png",plot(real(fft(A.*B));width=150)) # hide
@@ -71,7 +71,7 @@ plot(real(fft(A.*B)))
 
 ```julia
 using AsyPlots # hide
-n = 100000; srand(2) # hide
+n = 100000; using Random; Random.seed!(2) # hide
 x = cumsum(rand(-1:1,n))
 y = cumsum(rand(-1:1,n))
 save("rw.svg",Plot(Path(x,y;color="White"),   # hide

@@ -29,8 +29,8 @@ check). If you want to use the Cairo backend, install `Cairo.jl` via
 ## Examples
 
 ```@example
-using AsyPlots
-n = 250; srand(1)
+using AsyPlots, Random, FFTW
+n = 250; Random.seed!(1)
 A = [(x,y) == (0,0) ? 0 : 1/(x^2+y^2) for x=0:n-1,y=0:n-1]
 B = randn(n,n)
 save("fgf.png",plot(real(fft(A.*B));width=400)) # hide
@@ -40,8 +40,8 @@ nothing # hide
 ![fgf](fgf.png)
 
 ```@example
-using AsyPlots # hide
-n = 100000; srand(2) # hide
+using AsyPlots, Random # hide
+n = 100000; Random.seed!(2) # hide
 x = cumsum(rand(-1:1,n))
 y = cumsum(rand(-1:1,n))
 save("rw.svg",Plot(Path(x,y;color="White"),   # hide
@@ -54,4 +54,5 @@ Plot(Path(x,y;color="White"),
      axisarrow=Arrow())
 nothing # hide
 ```
+
 ![fgf](rw.svg)

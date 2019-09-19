@@ -98,7 +98,7 @@ NoPen() = Pen(other="NoPen")
 ==(P::Pen,Q::Pen) = all(getfield(P,k)==getfield(Q,k)
                                 for k in keys(_DEFAULT_PEN_ARGS))
 
-convert(::Type{NamedColor},name::AbstractString) = NamedColor(name)
+convert(::Type{NamedColor},name::Union{Symbol,AbstractString}) = NamedColor(name)
 convert(::Type{NamedColor},color::ColorTypes.RGB) = NamedColor(;color=color)
 convert(::Type{Pen},string::AbstractString) = Pen(;other=string)
 convert(::Type{Pen},color::NamedColor) = Pen(color=color)

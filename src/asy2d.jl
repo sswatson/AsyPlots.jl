@@ -617,6 +617,27 @@ end
 
 #--- Pixel Maps ---------------------------------------
 
+"""
+    PixelMap(pixels, lowerleft, upperright; kwargs...)
+
+A graphics primitive representing a two-dimensional array of
+pixels situated in the box with given lower left and upper 
+right corners.
+
+`pixels` is an array of `NamedColor`s, while `lowerleft` 
+and `upperright` are tuples.
+
+
+
+# Examples
+```julia-repl
+julia> pixels = [x*NamedColor("blue") + 
+                    (1-x)*NamedColor("red") 
+                        for x in 0:0.1:1, y in 0:0.1:1]
+julia> PixelMap(pixels, (0,0), (1,1))
+PixelMap(<11×11>,[0,1]×[0,1])
+```
+"""
 struct PixelMap <: GraphicElement2D
     pixels::Array{NamedColor,2}
     alpha::Array{<:Real,2}
@@ -728,10 +749,22 @@ const _DEFAULT_HEATMAP_KWARGS =
                      "Tomato"]
     )
 
+"""
+    heatmap(A; colors)
+    heatmap(A, lowerleft, upperright; colors)
+    heatmap(xs, ys, f::Function)
+
+Plot a heatmap of the values stored in the matrix `A`, using the colormap represented by the vector `colors` of `NamedColors`. Place the resulting `PixelMap` according to the given `lowerleft` and `upperright` tuples (which default to (0,0) and size(A)). 
+
+# Examples
+```julia-repl
+julia> heatmap(0:10, 0:10, (x,y) -> x^2 + y^2)
+```
+"""
 function heatmap(A::Array{<:Real,2};
                  colors=NamedColor.(_DEFAULT_HEATMAP_KWARGS[:colors]),
                  kwargs...)
-    heatmap(A,(0,0),size(A);colors=colors,kwargs...)
+    heatmap(A, (0,0), size(A); colors=colors, kwargs...)
 end
 
 function heatmap(A::Array{<:Real,2},
@@ -744,10 +777,16 @@ function heatmap(A::Array{<:Real,2},
     if :alpha in keys(kwargs)
         alpha = kwargs[:alpha] 
         kwargs = [(a,b) for (a,b) in kwargs if a ≠ :alpha]
-        PixelMap(C,alpha,lowerleft,upperright;kwargs...)
+        Plot(PixelMap(C,alpha,lowerleft,upperright; kwargs...))
     else
-        PixelMap(C,lowerleft,upperright;kwargs...)
+        Plot(PixelMap(C,lowerleft,upperright; kwargs...))
     end
+end
+
+function heatmap(xs, ys, f::Function; kwargs...)
+    heatmap([f(x,y) for x in xs, y in ys],
+            (xs[1], ys[1]),
+            (xs[end], ys[end]); kwargs...)
 end
 
 function cmap(colors::Array{NamedColor,1},r::Real)

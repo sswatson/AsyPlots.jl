@@ -690,11 +690,13 @@ function plot(f::Function,
               kwargs...)
     x = range(a,stop=b,length=m)
     y = range(c,stop=d,length=n)
-    plot(x,y,[f(p,q) for p=x,q=y];kwargs...)
+    plot(x,y,[f(p,q) for p=x,q=y]; kwargs...)
 end
 
 plot(f::Function,x::Tuple{<:Real,<:Real},y::Tuple{<:Real,<:Real};kwargs...) =
     plot(f,x...,y...;kwargs...)
+
+plot(xs,ys,f::Function; kwargs...) = plot(xs,ys,[f(x,y) for x in xs, y in ys]; kwargs...)
 
 function interactive(P::Plot3D;kwargs...)
     check_asy_present()

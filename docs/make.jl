@@ -3,7 +3,7 @@ using Documenter, Juno, AsyPlots
 
 makedocs(
     modules = [AsyPlots],
-    format = :html,
+    format = Documenter.HTML(),
     sitename = "AsyPlots.jl",
     doctest = false,
     strict = false,
@@ -15,6 +15,8 @@ makedocs(
             "man/asy2d.md",
             "man/asy3d.md",
             "man/pens.md",
+	    "man/heatmaps.md",
+	    "man/isolines.md",
             "man/graphing.md",
             "man/output.md",
             "man/settings.md",
@@ -31,7 +33,6 @@ makedocs(
 deploydocs(
     repo="github.com/sswatson/AsyPlots.jl.git",
     target="build",
-    julia="0.6",
     deps=nothing,
     make=nothing
 )

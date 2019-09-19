@@ -53,7 +53,7 @@ function piechart(labels,frequencies; title="")
     end
     angles = [[0];cumsum(2π*frequencies/sum(frequencies))]
     fontsizes = [min(12,round(Integer;digits=50*(angles[i+1]-angles[i]))) for i=1:length(angles)-1]
-    srand(1)
+    Random.seed!(1)
     sectors = [sector(1,angles[i],angles[i+1];
                       fillpen=Pen(color=ColorTypes.RGB(rand(),rand(),rand()),opacity=0.4))
                for i=1:length(angles)-1]

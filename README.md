@@ -27,6 +27,8 @@ This package provides access to
 
 ## Installation
 
+### Install Asymptote
+
 *AsyPlots* requires Asymptote, which you might already have as a part
 of your TeX installation (run `asy --version` from the command line to
 check). Alternatively, you can download and install it [here](https://sourceforge.net/projects/asymptote/files/2.44/). Version 2.44 is recommended. Linux and Windows binaries are available, and to install on macOS, download [asymptote-2.44.src.tgz](https://sourceforge.net/projects/asymptote/files/2.44/asymptote-2.44.src.tgz/download), unzip it, `cd` into that directory, and run
@@ -38,6 +40,8 @@ wget http://www.ivmaisoft.com/_bin/atomic_ops/libatomic_ops-7.6.0.tar.gz
 make all
 sudo make install
 ```
+
+### Optionally Install Cairo
 
 Asymptote can optionally use an alternative backend that relies on `Cairo.jl`, though
 this package is currently not installing cleanly. 
@@ -56,6 +60,10 @@ If you want to use the Cairo features of Asymptote, you should load Cairo first:
 using Cairo
 using AsyPlots
 ```
+
+### Install AsyPlots
+
+From the Julia `pkg` prompt, run `add AsyPlots`, or from the Julia prompt, run `Pkg.add("AsyPlots")`.
 
 ## Examples
 

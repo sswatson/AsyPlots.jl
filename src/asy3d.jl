@@ -30,12 +30,14 @@ struct Point3D <: GraphicElement3D
     P::Vec3
     label::AbstractString
     pen::Pen
+    shape::PointShape
 end
 
 const _DEFAULT_POINT3D_KWARGS =
     OrderedDict(
-        :label=>"",
-        :pen=>Pen()
+        :label => "",
+        :pen => Pen(),
+        :shape => PointShape()
     )
 
 Point3D(v::Vec3;kwargs...) =
@@ -48,17 +50,84 @@ Point3D(x::Real,y::Real,z::Real;kwargs...) =
 Point(x::Real,y::Real,z::Real;kwargs...) =
                             Point3D(x,y,z;kwargs...)
 
-function AsyString(point::Point3D)
-    label = point.label == "" ? "" : "L=$(enclosequote(point.label))"
-    AsyString("""
-    dot($(filterjoin(label,point.P,point.pen)));
-    """)
+# function AsyString(point::Point3D)
+#     label = point.label == "" ? "" : "L=$(enclosequote(point.label))"
+#     AsyString("""
+#     dot($(filterjoin(label,point.P,point.pen)));
+#     """)
+# end
+
+function AsyString(P::Point3D)
+    AsyString(point_drawcommand(P.P.x,P.P.y,P.P.z,P.pen,P.shape,P.label))
 end
 
 function Base.show(P::Point3D)
     kwargs = kwargstring(P,_DEFAULT_POINT3D_KWARGS)
     print(io,"Point3D($(P.P.x),$(P.P.y),$(P.P.z)$kwargs)")
 end
+
+struct PointCloud3D <: GraphicElement3D
+    points::Array{<:Vec3,1}
+    pen::Pen
+    shape::PointShape
+end
+
+const _DEFAULT_POINTCLOUD3D_KWARGS =
+    OrderedDict(
+        :pen => Pen(),
+        :shape => PointShape()
+    )
+
+PointCloud3D(points::Array{<:Vec3,1};kwargs...) =
+        PointCloud3D(points,updatedvals(_DEFAULT_POINTCLOUD2D_KWARGS,
+                                process_pen_kwargs(kwargs))...)
+
+PointCloud(points::Array{<:Vec3,1};kwargs...) = PointCloud3D(points;kwargs...)
+
+PointCloud3D(points::Array{<:Tuple{<:Real,<:Real,<:Real},1};kwargs...) =
+                                PointCloud3D(map(Vec3,points);kwargs...)
+
+PointCloud(points::Array{<:Tuple{<:Real,<:Real,<:Real},1};kwargs...) =
+                                    PointCloud3D(map(Vec3,points);kwargs...)
+
+PointCloud3D(coords::Array{<:Real,2};kwargs...) =
+            PointCloud3D([Vec3(coords[i,:]...) for i=1:size(coords,1)];kwargs...)
+
+PointCloud3D(x::Array,y::Array,z::Array;kwargs...) = PointCloud3D(collect(zip(x,y,z));kwargs...)
+
+PointCloud(x,y,z;kwargs...) = PointCloud3D(x,y,z;kwargs...)
+
+function point_drawcommand(x::String,y::String,z::String,p::Pen,shape::PointShape,lbl::AbstractString)
+    label = lbl == "" ? "" : "L=$(enclosequote(lbl)),"
+    pen = isdefault(p) ? "" : ",p=$(string(p))"
+    if shape.name == :dot
+        "dot($label($x,$y,$z)$pen);"
+    elseif shape.name == :plus
+        ϵ = shape.size
+        """
+        draw($label($x,$y,$z) + (-$ϵ,0,0) -- ($x,$y,$z) + ($ϵ,0,0)$pen);
+        draw(($x,$y,$z) + (0,-$ϵ,0) -- ($x,$y,$z) + (0,0,$ϵ)$pen);
+        draw(($x,$y,$z) + (0,0,-$ϵ) -- ($x,$y,$z) + (0,0,$ϵ)$pen);
+        """
+    else
+        error("3D point type should be :dot or :plus")
+    end
+end
+point_drawcommand(x::Real,y::Real,z::Real,p::Pen,shape::PointShape,lbl::AbstractString) = point_drawcommand(string(x),string(y),string(z),p,shape,lbl)
+
+function AsyString(P::PointCloud3D)
+    coords = vcat([[p.x p.y p.z] for p in P.points]...)
+    AsyString("""
+    file pathdata = input("pointcloud{IDENTIFIER}.csv");
+    real[][] A = pathdata.csv().dimension(0,3);
+    close(pathdata);
+    for(int i=0; i<A.length; ++i){
+        $(point_drawcommand("A[i][0]","A[i][1]","A[i][2]",P.pen,P.shape,""))
+    }
+    """,
+    Dict("pointcloud{IDENTIFIER}.csv"=>coords))
+end
+
 
 #--- 3D PATHS ------------------------------------------
 #-------------------------------------------------------

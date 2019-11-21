@@ -21,10 +21,11 @@ const _DEFAULT_ISOLINE_KWARGS =
                             "Gold",
                             "Tomato"],
                 :lift => false, 
-                :interpolation => :cubic)
+                :interpolation => :cubic,
+		:levels => 10)
 
 """
-    isolines(xs, ys, zs; lift = false, interpolation = :cubic)    
+    isolines(xs, ys, zs; lift = false, interpolation = :cubic)
     
 Plot the contour lines of the function whose values are represented
 by the array (or function) `zs`. If `lift` is true, plot in 3D.
@@ -43,7 +44,8 @@ function isolines(args...;kwargs...)
                 args[2], 
                 float([args[3](x,y) for x in args[1], y in args[2]]))
     end
-    C = Contour.contours(args...)
+    isolinedict = Dict(isolinekwargs)
+    C = Contour.contours(args...,isolinedict[:levels])
     m, M = extrema([Contour.level(cl) for cl in Contour.levels(C)])
     if D[:lift] 
         if D[:interpolation] == :linear

@@ -224,7 +224,7 @@ A graphics primitive representing a surface in three dimensions
 `x` and `y` may be one- or two-dimensional arrays
 
 The surface passes through the points
-    [x[i,j],y[i,j],z[i,j] for i=1:size(z,1),j=1:size(z,2)]
+    [x[i,j],y[i,j],z[i,j] for i in 1:size(z,1), j in 1:size(z,2)]
 
 The options are
 - `colors`: A vector of color names, for coloring
@@ -290,11 +290,10 @@ function AsyString(S::Surface)
     surfacepen = isdefault(D[:surfacepen]) ? "" : "surfacepen=$(D[:surfacepen])"
     meshpen = isdefault(D[:meshpen]) ? "" : "meshpen=$(D[:meshpen])"
 
-    surfacepenmod = """
-    p[i] += $(D[:surfacepen]);
-    """
-    if isdefault(D[:surfacepen])
-        surfacepenmod = ""
+    surfacepenmod = if isdefault(D[:surfacepen])
+        ""
+    else
+        "p[i] += $(D[:surfacepen]);"
     end
 
     safepaste(s) = length(s) > 1000 ? error("Misspecified colors") : s
@@ -331,35 +330,35 @@ function AsyString(S::Surface)
           }
         }
 
-        pen[][] patchpens = new pen[(m-1)*(n-1)][4];
+        pen[][] vertex_pens = new pen[(m-1)*(n-1)][4];
 
         int splineoffset = $(D[:spline] ? 1 : 0); 
 
         for(int i=0; i<m-1; ++i){
           for(int j=0; j<n-1; ++j){
-            patchpens[(n-1)*i+j][0] = pixels[i][j];
-            patchpens[(n-1)*i+j][1] = pixels[i+splineoffset][j];
-            patchpens[(n-1)*i+j][2] = pixels[i+splineoffset][j+splineoffset];
-            patchpens[(n-1)*i+j][3] = pixels[i][j+splineoffset];
+            vertex_pens[(n-1)*i+j][0] = pixels[i][j];
+            vertex_pens[(n-1)*i+j][1] = pixels[i+splineoffset][j];
+            vertex_pens[(n-1)*i+j][2] = pixels[i+splineoffset][j+splineoffset];
+            vertex_pens[(n-1)*i+j][3] = pixels[i][j+splineoffset];
           }
         }
-
-        s.colors(patchpens);
-
         """
     else
-        surfacepenmodloop = surfacepenmod == "" ? "" :
+        surfacepenmodloop = if surfacepenmod == "" 
+            "" 
+        else
             """
             for(int i=0; i<p.length-1; ++i) {
-                p[i] += $surfacepenmod; 
+                $surfacepenmod
             }
             """
+        end
         colorasy = """
         pen[] p = {$(safepaste((join(D[:colors],','))))};
 
         $surfacepenmodloop
-    
-        s.colors(palette(s.map(zpart),Gradient(100 ... p)));
+        
+        var vertex_pens = palette(s.map(zpart),Gradient(100 ... p));
         """
     end
 
@@ -419,9 +418,19 @@ function AsyString(S::Surface)
                             nu=m-1,nv=n-1$spline$cliparg);
 
     $colorasy
+    
+    s.colors(vertex_pens);
+    // each patch's color is the mean of its four vertex colors: 
+    var patch_pens = mean(vertex_pens); 
+    material[] patch_materials = new material[patch_pens.length];
+    for(int i=0; i<patch_pens.length; ++i) {
+        patch_materials[i] = material(diffusepen=patch_pens[i], 
+                                      emissivepen=0.25patch_pens[i]+0.75black,
+                                      shininess=0.3);
+    }
 
-    draw($(filterjoin("s",surfacepen,meshpen,
-                "render(merge=true)","light=nolight")));""",
+    draw($(filterjoin("s","patch_materials",meshpen,
+                "render(merge=true)")));""",
     asyData)
 end
 

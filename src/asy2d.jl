@@ -113,7 +113,7 @@ function point_drawcommand(x::String,y::String,p::Pen,shape::PointShape,lbl::Abs
         """
     elseif shape.name == :circle
         ϵ = shape.size
-        "draw($(label)circle(($x,$y), $ϵ$pen);"
+        "draw($(label)circle(($x,$y), $ϵ)$pen);"
     end
 end
 point_drawcommand(x::Real,y::Real,p::Pen,shape::PointShape,lbl::AbstractString) = point_drawcommand(string(x),string(y),p,shape,lbl)
@@ -908,8 +908,11 @@ function AsyString(P::Plot2D)
         axesstring = ""
     end
 
-    shipout = D[:bgfill] ? "shipout(bbox(FillDraw($(D[:border]),fillpen=$(string(D[:bgcolor])),drawpen=invisible)));" : 
+    shipout = if D[:bgfill]
+        "shipout(bbox($(D[:border]), $(string(D[:bgcolor])), Fill));"
+    else
         "shipout(bbox($(D[:border]),invisible));"
+    end
 
     pdf = D[:pdf] ? "settings.outformat=\"pdf\";" : ""
     ignoreaspect = D[:ignoreaspect] ? "IgnoreAspect" : ""

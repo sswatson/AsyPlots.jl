@@ -243,6 +243,8 @@ struct Surface <: GraphicElement3D
     surfacepen::Pen
     meshpen::Pen
     clip # either false or an Array{Bool,2} of the same size as z
+    darkness::Real
+    shininess::Real
 end
 
 const _DEFAULT_SURFACE_KWARGS =
@@ -254,7 +256,9 @@ const _DEFAULT_SURFACE_KWARGS =
          :spline => true,
          :surfacepen => Pen(),
          :meshpen => Pen(),
-         :clip => false)
+         :clip => false,
+         :darkness => 0.75,
+         :shininess => 0.3)
 
 function Surface(x::Array{<:Real,2},
                  y::Array{<:Real,2},
@@ -425,8 +429,8 @@ function AsyString(S::Surface)
     material[] patch_materials = new material[patch_pens.length];
     for(int i=0; i<patch_pens.length; ++i) {
         patch_materials[i] = material(diffusepen=patch_pens[i], 
-                                      emissivepen=0.25patch_pens[i]+0.75black,
-                                      shininess=0.3);
+                                      emissivepen=$(1-D[:darkness])patch_pens[i]+$(D[:darkness])black,
+                                      shininess=$(D[:shininess]));
     }
 
     draw($(filterjoin("s","patch_materials",meshpen,

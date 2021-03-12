@@ -1,7 +1,7 @@
 name = "AsyPlots"
 uuid = "77e5a97a-5ef9-58df-9d21-21957d92d960"
 authors = ["Samuel S. Watson <sswatson@brown.edu>"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 Cairo = "159f3aea-2a34-519c-b102-8c37f9878175"

@@ -336,7 +336,7 @@ function AsyString(S::Surface)
 
         pen[][] vertex_pens = new pen[(m-1)*(n-1)][4];
 
-        int splineoffset = $(D[:spline] ? 1 : 0); 
+        int splineoffset = $(D[:spline] ? 1 : 0);
 
         for(int i=0; i<m-1; ++i){
           for(int j=0; j<n-1; ++j){
@@ -348,8 +348,8 @@ function AsyString(S::Surface)
         }
         """
     else
-        surfacepenmodloop = if surfacepenmod == "" 
-            "" 
+        surfacepenmodloop = if surfacepenmod == ""
+            ""
         else
             """
             for(int i=0; i<p.length-1; ++i) {
@@ -361,7 +361,7 @@ function AsyString(S::Surface)
         pen[] p = {$(safepaste((join(D[:colors],','))))};
 
         $surfacepenmodloop
-        
+
         var vertex_pens = palette(s.map(zpart),Gradient(100 ... p));
         """
     end
@@ -422,13 +422,13 @@ function AsyString(S::Surface)
                             nu=m-1,nv=n-1$spline$cliparg);
 
     $colorasy
-    
+
     s.colors(vertex_pens);
-    // each patch's color is the mean of its four vertex colors: 
-    var patch_pens = mean(vertex_pens); 
+    // each patch's color is the mean of its four vertex colors:
+    var patch_pens = mean(vertex_pens);
     material[] patch_materials = new material[patch_pens.length];
     for(int i=0; i<patch_pens.length; ++i) {
-        patch_materials[i] = material(diffusepen=patch_pens[i], 
+        patch_materials[i] = material(diffusepen=patch_pens[i],
                                       emissivepen=$(1-D[:darkness])patch_pens[i]+$(D[:darkness])black,
                                       shininess=$(D[:shininess]));
     }
@@ -638,7 +638,7 @@ const _DEFAULT_PLOT3D_KWARGS =
          :zticks => "NoTicks3",
          :arrow => Arrow3(),
          :camera => nothing,
-         :up => nothing, 
+         :up => nothing,
          :projection => "perspective",
          :bgcolor => NamedColor("white"),
          :width => _DEFAULT_WIDTH,
@@ -682,7 +682,7 @@ function AsyString(P::Plot3D)
     else
         axesstring = ""
     end
-    
+
     if occursin("(",D[:projection])
         currentprojection = D[:projection]
     elseif D[:camera] != nothing

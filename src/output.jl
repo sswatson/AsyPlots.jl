@@ -209,11 +209,11 @@ function Base.show(io::IO,::MIME"text/plain",P::Plot)
     if _SHOW_PLOTS && !_is_ijulia() && !_is_juno() && isdefined(Base, :active_repl)
         tempdir = mktempdir()
         filename = "$tempdir/myplot.pdf"
-        save(filename,P)
+        save(filename, P)
         try
             if Sys.isapple()
                 run(`open $filename`)
-            elseif Sys.islinux() || is_bsd()
+            elseif Sys.islinux() || Sys.isbsd()
                 run(`xdg-open $filename`)
             elseif Sys.iswindows()
                 run(`start $filename`)
@@ -230,5 +230,3 @@ function Base.show(io::IO,::MIME"text/plain",P::Plot)
         print(io,"$(split(string(typeof(P)),".")[end])(<$n elements>)")
     end
 end
-
-
